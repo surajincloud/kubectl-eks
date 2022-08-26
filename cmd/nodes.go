@@ -1,7 +1,3 @@
-/*
-Copyright © 2022 NAME HERE <EMAIL ADDRESS>
-
-*/
 package cmd
 
 import (
@@ -47,10 +43,10 @@ func nodes(cmd *cobra.Command, args []string) error {
 
 	w := tabwriter.NewWriter(os.Stdout, 5, 2, 3, ' ', tabwriter.TabIndent)
 	defer w.Flush()
-	fmt.Fprintln(w, "NAME", "\t", "AGE", "\t", "ARCH", "\t", "INSTANCE-TYPE", "\t", "OS", "\t", "CAPACITY-TYPE", "\t", "REGION")
+	fmt.Fprintln(w, "NAME", "\t", "ARCH", "\t", "INSTANCE-TYPE", "\t", "OS", "\t", "CAPACITY-TYPE", "\t", "REGION", "\t", "AGE")
 	for _, i := range nodeList {
 		age := getAge(i.CreationTimestamp)
-		fmt.Fprintln(w, i.Name, "\t", age, "\t", i.Labels[kube.ArchLabel], "\t", i.Labels[kube.InstanceTypeLabel], "\t", i.Labels[kube.OsLabel], "\t", i.Labels[kube.CapacityTypeLabel], "\t", i.Labels[kube.ZoneLabel])
+		fmt.Fprintln(w, i.Name, "\t", i.Labels[kube.ArchLabel], "\t", i.Labels[kube.InstanceTypeLabel], "\t", i.Labels[kube.OsLabel], "\t", i.Labels[kube.CapacityTypeLabel], "\t", i.Labels[kube.ZoneLabel], "\t", age)
 	}
 
 	return nil

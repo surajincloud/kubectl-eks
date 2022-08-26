@@ -9,10 +9,19 @@ import (
 )
 
 func GetNodes(configFlags *genericclioptions.ConfigFlags) ([]corev1.Node, error) {
-	clientSet := ClientSet(configFlags)
+	clientSet, _ := ClientSet(configFlags)
 	nodeList, err := clientSet.CoreV1().Nodes().List(context.Background(), metav1.ListOptions{})
 	if err != nil {
 		return []corev1.Node{}, err
+	}
+	return nodeList.Items, nil
+}
+
+func GetSA(configFlags *genericclioptions.ConfigFlags) ([]corev1.ServiceAccount, error) {
+	clientSet, namespace := ClientSet(configFlags)
+	nodeList, err := clientSet.CoreV1().ServiceAccounts(namespace).List(context.Background(), metav1.ListOptions{})
+	if err != nil {
+		return []corev1.ServiceAccount{}, err
 	}
 	return nodeList.Items, nil
 }

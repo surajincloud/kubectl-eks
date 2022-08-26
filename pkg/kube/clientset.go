@@ -8,7 +8,11 @@ import (
 )
 
 // ClientSet k8s clientset
-func ClientSet(configFlags *genericclioptions.ConfigFlags) *kubernetes.Clientset {
+func ClientSet(configFlags *genericclioptions.ConfigFlags) (*kubernetes.Clientset, string) {
+	namespace := ""
+	if configFlags.Namespace != nil {
+		namespace = *configFlags.Namespace
+	}
 	config, err := configFlags.ToRESTConfig()
 	if err != nil {
 		panic("kube config load error")
@@ -17,5 +21,5 @@ func ClientSet(configFlags *genericclioptions.ConfigFlags) *kubernetes.Clientset
 	if err != nil {
 		fmt.Println("Error generating Kubernetes configuration", err)
 	}
-	return clientSet
+	return clientSet, namespace
 }
