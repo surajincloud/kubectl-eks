@@ -41,19 +41,20 @@ func performSSM(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	var givenNode string
+	var givenNode, region string
 	for _, i := range nodeList {
 		if i.Name == args[0] {
 			// https://github.com/aws/containers-roadmap/issues/1395
 			str := strings.Split(i.Spec.ProviderID, "/")
 			givenNode = str[len(str)-1]
+			region = i.Labels["topology.kubernetes.io/region"]
 		}
 	}
-	fmt.Printf("SSM into node %v\n", givenNode)
+	fmt.Printf("SSM into node %v in region %v\n", givenNode, region)
 
 	target := givenNode
 
-	cfg, err := config.LoadDefaultConfig(context.Background())
+	cfg, err := config.LoadDefaultConfig(context.Background(), config.WithRegion(region))
 	if err != nil {
 		log.Fatal(err)
 	}
