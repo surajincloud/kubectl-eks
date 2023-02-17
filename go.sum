@@ -59,6 +59,10 @@ github.com/aws/aws-sdk-go-v2/internal/ini v1.3.29/go.mod h1:TwuqRBGzxjQJIwH16/fO
 github.com/aws/aws-sdk-go-v2/service/ec2 v1.64.0 h1:zI904mHbXiJgIc5bwpo5jOk1+wDvcX04PyYd2dInh/4=
 github.com/aws/aws-sdk-go-v2/service/ec2 v1.64.0/go.mod h1:zul71QqzR4D1a90/5FloZiAnZ1CtuIjVH7R9MP997+A=
 github.com/aws/aws-sdk-go-v2/service/ec2instanceconnect v1.14.11/go.mod h1:E29Z9YWBhILsNzaxWab92P6Wni6pdd4NVN8D4FCyNUU=
+github.com/aws/aws-sdk-go-v2/service/eks v1.27.3 h1:jlh0AJVhauqSGaiwRJx4j0LNBGEAaGn46sA1XJyTj0E=
+github.com/aws/aws-sdk-go-v2/service/eks v1.27.3/go.mod h1:S30WtE6uWErcppqG9Rl03MATEFYsm0vnDyxPUKmmCqU=
+github.com/aws/aws-sdk-go-v2/service/imagebuilder v1.22.2 h1:huxe8VQA8Y2Qb8y24OcJitQoR/3mY0t2fd+THgLMF/Y=
+github.com/aws/aws-sdk-go-v2/service/imagebuilder v1.22.2/go.mod h1:g+/yUg9DVMNW5LSBhSr3u3Cs1jZpadXacB8aObVoFgg=
 github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.9.19/go.mod h1:02CP6iuYP+IVnBX5HULVdSAku/85eHB2Y9EsFhrkEwU=
 github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.9.22 h1:LjFQf8hFuMO22HkV5VWGLBvmCLBCLPivUAmpdpnp4Vs=
 github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.9.22/go.mod h1:xt0Au8yPIwYXf/GYPy/vl4K3CgwhfQMYbrH7DlUUIws=
