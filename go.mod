@@ -3,7 +3,10 @@ module github.com/surajincloud/kubectl-eks
 go 1.20
 
 require (
+	github.com/aws/aws-sdk-go-v2 v1.17.4
 	github.com/aws/aws-sdk-go-v2/config v1.18.13
+	github.com/aws/aws-sdk-go-v2/service/eks v1.27.3
+	github.com/aws/aws-sdk-go-v2/service/imagebuilder v1.22.2
 	github.com/mmmorris1975/ssm-session-client v0.400.1
 	github.com/spf13/cobra v1.6.1
 	k8s.io/api v0.26.1
@@ -14,7 +17,6 @@ require (
 
 require (
 	github.com/aws/aws-sdk-go v1.44.76 // indirect
-	github.com/aws/aws-sdk-go-v2 v1.17.4 // indirect
 	github.com/aws/aws-sdk-go-v2/credentials v1.13.13 // indirect
 	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.12.22 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/configsources v1.1.28 // indirect
