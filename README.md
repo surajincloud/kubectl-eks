@@ -35,6 +35,11 @@ kubectl eks irsa -n app-staging
 
 ## Installation
 
+### Download the binary
+
+* Download the binary from the [release pages](https://github.com/surajincloud/kubectl-eks/releases).
+* Place it into any of the location from the PATH.
+
 ### Build from Source
 
 ```
