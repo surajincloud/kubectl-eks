@@ -20,7 +20,7 @@ to quickly create a Cobra application.`,
 }
 
 func version(cmd *cobra.Command, args []string) error {
-	fmt.Println("v0.0.1")
+	fmt.Println("v0.1.2")
 	return nil
 }
 
