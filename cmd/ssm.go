@@ -60,8 +60,7 @@ func performSSM(cmd *cobra.Command, args []string) error {
 	}
 
 	// A 3rd argument can be passed to specify a command to run before turning the shell over to the user
-	log.Fatal(ssmclient.ShellSession(cfg, target))
-
+	log.Fatal(ssmclient.ShellPluginSession(cfg, target))
 	return nil
 
 }
