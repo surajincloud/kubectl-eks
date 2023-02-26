@@ -1,0 +1,21 @@
+site_name: kubectl-eks
+site_url: https://surajincloud.github.io/kubectl-eks/
+site_author: Suraj Narwade
+theme:
+  name: material
+  palette:
+    - scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+
+repo_name: surajincloud/kubectl-eks
+repo_url: https://github.com/surajincloud/kubectl-eks
