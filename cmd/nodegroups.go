@@ -75,5 +75,5 @@ func nodegroups(cmd *cobra.Command, args []string) error {
 
 func init() {
 	rootCmd.AddCommand(nodegroupsCmd)
-	addonsCmd.PersistentFlags().String("region", "", "region")
+	nodegroupsCmd.PersistentFlags().String("region", "", "region")
 }
