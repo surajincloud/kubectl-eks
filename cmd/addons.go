@@ -43,6 +43,15 @@ func addons(cmd *cobra.Command, args []string) error {
 	clusterName, _ := cmd.Flags().GetString("cluster-name")
 	region, _ := cmd.Flags().GetString("region")
 
+	if clusterName == "" {
+		fmt.Println("please pass cluster name with --cluster-name")
+		os.Exit(0)
+	}
+	if region == "" {
+		fmt.Println("please pass region name with --region")
+		os.Exit(0)
+	}
+
 	// aws config
 	cfg, err := config.LoadDefaultConfig(ctx, config.WithRegion(region))
 	if err != nil {
