@@ -35,6 +35,11 @@ func nodegroups(cmd *cobra.Command, args []string) error {
 
 	region, _ := cmd.Flags().GetString("region")
 
+	if region == "" {
+		fmt.Println("please pass region name with --region")
+		os.Exit(0)
+	}
+
 	cfg, err := config.LoadDefaultConfig(ctx, config.WithRegion(region))
 	if err != nil {
 		log.Fatal(err)
