@@ -1,0 +1,41 @@
+apiVersion: krew.googlecontainertools.github.com/v1alpha2
+kind: Plugin
+metadata:
+  name: eks
+spec:
+  version: {{ .TagName }}
+  homepage: https://github.com/surajincloud/kubectl-eks
+  shortDescription: Kubectl plugin for Amazon EKS
+  description: |
+    kubectl-eks plugin provides set of commands for users which will simplify operations for users while interacting with Amazon EKS clusters.
+  platforms:
+  - selector:
+      matchLabels:
+        os: darwin
+        arch: amd64
+    {{addURIAndSha "https://github.com/surajincloud/kubectl-eks/releases/download/{{ .TagName }}/kubectl-eks_{{ .TagName }}_darwin_amd64.tar.gz" .TagName }}
+    bin: kubectl-eks
+  - selector:
+      matchLabels:
+        os: darwin
+        arch: arm64
+    {{addURIAndSha "https://github.com/surajincloud/kubectl-eks/releases/download/{{ .TagName }}/kubectl-eks_{{ .TagName }}_darwin_arm64.tar.gz" .TagName }}
+    bin: kubectl-eks
+  - selector:
+      matchLabels:
+        os: linux
+        arch: amd64
+    {{addURIAndSha "https://github.com/surajincloud/kubectl-eks/releases/download/{{ .TagName }}/kubectl-eks_{{ .TagName }}_linux_amd64.tar.gz" .TagName }}
+    bin: kubectl-eks
+  - selector:
+      matchLabels:
+        os: linux
+        arch: arm64
+    {{addURIAndSha "https://github.com/surajincloud/kubectl-eks/releases/download/{{ .TagName }}/kubectl-eks_{{ .TagName }}_linux_arm64.tar.gz" .TagName }}
+    bin: kubectl-eks
+  - selector:
+      matchLabels:
+        os: windows
+        arch: amd64
+    {{addURIAndSha "https://github.com/surajincloud/kubectl-eks/releases/download/{{ .TagName }}/kubectl-eks_{{ .TagName }}_windows_amd64.tar.gz" .TagName }}
+    bin: kubectl-eks.exe
