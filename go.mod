@@ -5,9 +5,11 @@ go 1.20
 require (
 	github.com/aws/aws-sdk-go-v2 v1.17.4
 	github.com/aws/aws-sdk-go-v2/config v1.18.13
+	github.com/aws/aws-sdk-go-v2/service/ec2 v1.64.0
 	github.com/aws/aws-sdk-go-v2/service/eks v1.27.3
-	github.com/aws/aws-sdk-go-v2/service/imagebuilder v1.22.2
+	github.com/aws/aws-sdk-go-v2/service/ssm v1.31.3
 	github.com/mmmorris1975/ssm-session-client v0.400.1
+	github.com/siderolabs/go-kubeconfig v0.1.0
 	github.com/spf13/cobra v1.6.1
 	k8s.io/api v0.26.1
 	k8s.io/apimachinery v0.26.1
@@ -22,9 +24,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/internal/configsources v1.1.28 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.4.22 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/ini v1.3.29 // indirect
-	github.com/aws/aws-sdk-go-v2/service/ec2 v1.64.0 // indirect
 	github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.9.22 // indirect
-	github.com/aws/aws-sdk-go-v2/service/ssm v1.31.3 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sso v1.12.2 // indirect
 	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.14.2 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sts v1.18.3 // indirect
@@ -66,8 +66,8 @@ require (
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
-	github.com/stretchr/objx v0.4.0 // indirect
-	github.com/stretchr/testify v1.8.0 // indirect
+	github.com/stretchr/objx v0.5.0 // indirect
+	github.com/stretchr/testify v1.8.1 // indirect
 	github.com/twinj/uuid v0.0.0-20151029044442-89173bcdda19 // indirect
 	github.com/xlab/treeprint v1.1.0 // indirect
 	github.com/xtaci/smux v1.5.16 // indirect
