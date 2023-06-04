@@ -1,5 +1,19 @@
 # Usage
 
+## Creates Kubeconfig
+
+```
+kubectl eks kubeconfig --cluster-name your-cluster --region your-region
+```
+
+## Updates existing Kubeconfig
+
+* fetch and update existing kubeconfig (~/.kube/config)
+
+```
+kubectl eks kubeconfig --cluster-name your-cluster --region your-region --merge
+```
+
 ## List addons
 
 ```
@@ -30,3 +44,9 @@ kubectl eks ssm <name-of-the-node>
 ```
 
 **Note**: above command will only work if node IAM role has predefined IAM policy AmazonSSMManagedInstanceCore policy attached. Click here for more reference.
+
+## List fargate profiles
+
+```
+kubectl eks fargate --cluster-name your-cluster --region your-region
+```
