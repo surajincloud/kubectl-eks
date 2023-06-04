@@ -17,23 +17,11 @@ import (
 var ssmCmd = &cobra.Command{
 	Use:   "ssm",
 	Short: "Access given EKS node via SSM",
-	Long: `SSM Access to given EKS Node
-	IAM Roles needs to be attached to given EKS Node`,
+	Long: `
+	SSM Access to given EKS Node
+	IAM Roles needs to be attached to given EKS Node
+	Check docs: https://surajincloud.github.io/kubectl-eks/usage/#access-to-eks-node-via-ssm`,
 	RunE: performSSM,
-}
-
-func init() {
-	rootCmd.AddCommand(ssmCmd)
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// ssmCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// ssmCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
 func performSSM(cmd *cobra.Command, args []string) error {
@@ -63,4 +51,8 @@ func performSSM(cmd *cobra.Command, args []string) error {
 	log.Fatal(ssmclient.ShellPluginSession(cfg, target))
 	return nil
 
+}
+
+func init() {
+	rootCmd.AddCommand(ssmCmd)
 }
