@@ -12,6 +12,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/eks"
 	kubeconfig "github.com/siderolabs/go-kubeconfig"
 	"github.com/spf13/cobra"
+	"github.com/surajincloud/kubectl-eks/pkg/kube"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/clientcmd/api"
 )
@@ -43,13 +44,15 @@ func kubeconfigCommand(cmd *cobra.Command, args []string) error {
 	region, _ := cmd.Flags().GetString("region")
 	merge, _ := cmd.Flags().GetBool("merge")
 
-	if clusterName == "" {
-		fmt.Println("please pass cluster name with --cluster-name")
-		os.Exit(0)
+	// get Clustername
+	clusterName, err := kube.GetClusterName(clusterName)
+	if err != nil {
+		log.Fatal(err)
 	}
-	if region == "" {
-		fmt.Println("please pass region name with --region")
-		os.Exit(0)
+	// get region
+	region, err = kube.GetRegion(region)
+	if err != nil {
+		log.Fatal(err)
 	}
 
 	// aws config

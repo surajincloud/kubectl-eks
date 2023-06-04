@@ -14,6 +14,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/eks"
 	"github.com/spf13/cobra"
+	"github.com/surajincloud/kubectl-eks/pkg/kube"
 )
 
 // fargateCmd represents the fargate command
@@ -36,13 +37,15 @@ func fargate(cmd *cobra.Command, args []string) error {
 	clusterName, _ := cmd.Flags().GetString("cluster-name")
 	region, _ := cmd.Flags().GetString("region")
 
-	if clusterName == "" {
-		fmt.Println("please pass cluster name with --cluster-name")
-		os.Exit(0)
+	// get Clustername
+	clusterName, err := kube.GetClusterName(clusterName)
+	if err != nil {
+		log.Fatal(err)
 	}
-	if region == "" {
-		fmt.Println("please pass region name with --region")
-		os.Exit(0)
+	// get region
+	region, err = kube.GetRegion(region)
+	if err != nil {
+		log.Fatal(err)
 	}
 
 	// Load AWS configuration from environment variables or default configuration files
