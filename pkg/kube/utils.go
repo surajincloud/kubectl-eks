@@ -3,6 +3,11 @@ package kube
 import (
 	"fmt"
 	"os"
+	"time"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"k8s.io/apimachinery/pkg/util/duration"
 )
 
 func GetClusterName(clusterName string) (string, error) {
@@ -25,4 +30,11 @@ func GetRegion(region string) (string, error) {
 		return region, nil
 	}
 	return region, nil
+}
+
+func GetAge(creationStamp metav1.Time) string {
+
+	currentTime := time.Now()
+	diff := currentTime.Sub(creationStamp.Time)
+	return duration.HumanDuration(diff)
 }
