@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 	"text/tabwriter"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -32,6 +33,10 @@ to quickly create a Cobra application.`,
 
 func nodegroups(cmd *cobra.Command, args []string) error {
 
+	// AmiTypesMap := map[string]string{
+	// 	"AL2_x86_64": "Amazon Linux",
+	// }
+
 	ctx := context.Background()
 
 	// read flag values
@@ -55,14 +60,14 @@ func nodegroups(cmd *cobra.Command, args []string) error {
 		log.Fatal(err)
 	}
 	client := eks.NewFromConfig(cfg)
-
+	// ec2Client := ec2.NewFromConfig(cfg)
 	nodegroupsList, err := client.ListNodegroups(ctx, &eks.ListNodegroupsInput{ClusterName: aws.String("staging-01")})
 	if err != nil {
 		log.Fatal(err)
 	}
 	w := tabwriter.NewWriter(os.Stdout, 5, 2, 3, ' ', tabwriter.TabIndent)
 	defer w.Flush()
-	fmt.Fprintln(w, "NAME", "\t", "RELEASE", "\t", "AMI_TYPE", "\t", "LC", "\t", "STATUS")
+	fmt.Fprintln(w, "NAME", "\t", "RELEASE", "\t", "AMI_TYPE", "\t", "INSTANCE_TYPES", "\t", "STATUS")
 	for _, i := range nodegroupsList.Nodegroups {
 		name := i
 		dngp, err := client.DescribeNodegroup(ctx, &eks.DescribeNodegroupInput{ClusterName: aws.String("staging-01"), NodegroupName: aws.String(i)})
@@ -76,9 +81,10 @@ func nodegroups(cmd *cobra.Command, args []string) error {
 
 		amiType := dngp.Nodegroup.AmiType
 
-		ltid := aws.ToString(dngp.Nodegroup.LaunchTemplate.Id)
-
-		fmt.Fprintln(w, name, "\t", rv, "\t", amiType, "\t", ltid, "\t", status)
+		// ltid := aws.ToString(dngp.Nodegroup.LaunchTemplate.Id)
+		// ec2Client.DescribeLaunchTemplates(ctx, &ec2.DescribeLaunchTemplatesInput{})
+		instanceTypes := strings.Join(dngp.Nodegroup.InstanceTypes, ",")
+		fmt.Fprintln(w, name, "\t", rv, "\t", amiType, "\t", instanceTypes, "\t", status)
 	}
 	return nil
 }
