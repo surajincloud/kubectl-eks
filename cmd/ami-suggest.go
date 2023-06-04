@@ -73,7 +73,7 @@ func suggestion(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Printf("Recommended Release version for EKS optimised amazon linux AMI: %v\n", aws.ToString(out.Parameter.Value))
+	fmt.Printf("Recommended Image ID for EKS optimised amazon linux AMI: %v\n", aws.ToString(out.Parameter.Value))
 
 	return nil
 

@@ -11,11 +11,10 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
-	"github.com/aws/aws-sdk-go-v2/service/ssm"
 	"github.com/spf13/cobra"
 	"github.com/surajincloud/kubectl-eks/pkg/kube"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	amt "k8s.io/apimachinery/pkg/util/duration"
+	"k8s.io/apimachinery/pkg/util/duration"
 )
 
 // nodesCmd represents the nodes command
@@ -48,13 +47,25 @@ func nodes(cmd *cobra.Command, args []string) error {
 	}
 
 	ctx := context.Background()
-	region := "eu-west-1"
+	// read flag values
+	clusterName, _ := cmd.Flags().GetString("cluster-name")
+	region, _ := cmd.Flags().GetString("region")
+
+	// get Clustername
+	clusterName, err := kube.GetClusterName(clusterName)
+	if err != nil {
+		log.Fatal(err)
+	}
+	// get region
+	region, err = kube.GetRegion(region)
+	if err != nil {
+		log.Fatal(err)
+	}
 	cfg, err := config.LoadDefaultConfig(ctx, config.WithRegion(region))
 	if err != nil {
 		log.Fatal(err)
 	}
-	// client := eks.NewFromConfig(cfg)
-	client2 := ec2.NewFromConfig(cfg)
+	ec2Client := ec2.NewFromConfig(cfg)
 
 	w := tabwriter.NewWriter(os.Stdout, 5, 2, 3, ' ', tabwriter.TabIndent)
 	defer w.Flush()
@@ -62,21 +73,11 @@ func nodes(cmd *cobra.Command, args []string) error {
 	for _, i := range nodeList {
 		age := getAge(i.CreationTimestamp)
 		img := i.Labels[kube.NodeGroupImage]
-		dis, _ := client2.DescribeImages(ctx, &ec2.DescribeImagesInput{ImageIds: []string{img}})
+		dis, _ := ec2Client.DescribeImages(ctx, &ec2.DescribeImagesInput{ImageIds: []string{img}})
 
 		amiName := aws.ToString(dis.Images[0].Name)
 		fmt.Fprintln(w, i.Name, "\t", i.Labels[kube.InstanceTypeLabel], "\t", i.Labels[kube.OsLabel], "\t", i.Labels[kube.CapacityTypeLabel], "\t", i.Labels[kube.ZoneLabel], "\t", i.Labels[kube.NodeGroupImage], "\t", amiName, "\t", age)
 	}
-	// SSM parameter
-	//aws ssm get-parameter --name /aws/service/eks/optimized-ami/1.24/amazon-linux-2/recommended/image_id --region region-code --query "Parameter.Value" --output text
-	client3 := ssm.NewFromConfig(cfg)
-	out, err := client3.GetParameter(ctx, &ssm.GetParameterInput{
-		Name: aws.String("/aws/service/eks/optimized-ami/1.23/amazon-linux-2/recommended/image_id"),
-	})
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Println(aws.ToString(out.Parameter.Value))
 	return nil
 }
 
@@ -84,5 +85,5 @@ func getAge(creationStamp metav1.Time) string {
 
 	currentTime := time.Now()
 	diff := currentTime.Sub(creationStamp.Time)
-	return amt.HumanDuration(diff)
+	return duration.HumanDuration(diff)
 }

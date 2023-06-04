@@ -60,8 +60,7 @@ func nodegroups(cmd *cobra.Command, args []string) error {
 		log.Fatal(err)
 	}
 	client := eks.NewFromConfig(cfg)
-	// ec2Client := ec2.NewFromConfig(cfg)
-	nodegroupsList, err := client.ListNodegroups(ctx, &eks.ListNodegroupsInput{ClusterName: aws.String("staging-01")})
+	nodegroupsList, err := client.ListNodegroups(ctx, &eks.ListNodegroupsInput{ClusterName: aws.String(clusterName)})
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -70,7 +69,7 @@ func nodegroups(cmd *cobra.Command, args []string) error {
 	fmt.Fprintln(w, "NAME", "\t", "RELEASE", "\t", "AMI_TYPE", "\t", "INSTANCE_TYPES", "\t", "STATUS")
 	for _, i := range nodegroupsList.Nodegroups {
 		name := i
-		dngp, err := client.DescribeNodegroup(ctx, &eks.DescribeNodegroupInput{ClusterName: aws.String("staging-01"), NodegroupName: aws.String(i)})
+		dngp, err := client.DescribeNodegroup(ctx, &eks.DescribeNodegroupInput{ClusterName: aws.String(clusterName), NodegroupName: aws.String(i)})
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -81,8 +80,6 @@ func nodegroups(cmd *cobra.Command, args []string) error {
 
 		amiType := dngp.Nodegroup.AmiType
 
-		// ltid := aws.ToString(dngp.Nodegroup.LaunchTemplate.Id)
-		// ec2Client.DescribeLaunchTemplates(ctx, &ec2.DescribeLaunchTemplatesInput{})
 		instanceTypes := strings.Join(dngp.Nodegroup.InstanceTypes, ",")
 		fmt.Fprintln(w, name, "\t", rv, "\t", amiType, "\t", instanceTypes, "\t", status)
 	}
