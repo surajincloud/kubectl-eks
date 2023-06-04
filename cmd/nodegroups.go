@@ -14,6 +14,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/eks"
 	"github.com/spf13/cobra"
+	"github.com/surajincloud/kubectl-eks/pkg/kube"
 )
 
 // nodegroupsCmd represents the nodegroups command
@@ -35,9 +36,10 @@ func nodegroups(cmd *cobra.Command, args []string) error {
 
 	region, _ := cmd.Flags().GetString("region")
 
-	if region == "" {
-		fmt.Println("please pass region name with --region")
-		os.Exit(0)
+	// get region
+	region, err := kube.GetRegion(region)
+	if err != nil {
+		log.Fatal(err)
 	}
 
 	cfg, err := config.LoadDefaultConfig(ctx, config.WithRegion(region))
