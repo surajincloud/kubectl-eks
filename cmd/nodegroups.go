@@ -34,10 +34,18 @@ func nodegroups(cmd *cobra.Command, args []string) error {
 
 	ctx := context.Background()
 
+	// read flag values
+	clusterName, _ := cmd.Flags().GetString("cluster-name")
 	region, _ := cmd.Flags().GetString("region")
 
+	// get Clustername
+	clusterName, err := kube.GetClusterName(clusterName)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	// get region
-	region, err := kube.GetRegion(region)
+	region, err = kube.GetRegion(region)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -77,5 +85,6 @@ func nodegroups(cmd *cobra.Command, args []string) error {
 
 func init() {
 	rootCmd.AddCommand(nodegroupsCmd)
+	nodegroupsCmd.PersistentFlags().String("cluster-name", "", "Cluster name")
 	nodegroupsCmd.PersistentFlags().String("region", "", "region")
 }
