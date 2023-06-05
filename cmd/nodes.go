@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 	"text/tabwriter"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -54,12 +55,28 @@ func nodes(cmd *cobra.Command, args []string) error {
 	defer w.Flush()
 	fmt.Fprintln(w, "NAME", "\t", "INSTANCE-TYPE", "\t", "OS", "\t", "CAPACITY-TYPE", "\t", "REGION", "\t", "AMI-ID", "\t", "AMI-NAME", "\t", "AGE")
 	for _, i := range nodeList {
+		var amiID, amiName, capacityType string
 		age := kube.GetAge(i.CreationTimestamp)
-		img := i.Labels[kube.NodeGroupImage]
-		dis, _ := ec2Client.DescribeImages(ctx, &ec2.DescribeImagesInput{ImageIds: []string{img}})
 
-		amiName := aws.ToString(dis.Images[0].Name)
-		fmt.Fprintln(w, i.Name, "\t", i.Labels[kube.InstanceTypeLabel], "\t", i.Labels[kube.OsLabel], "\t", i.Labels[kube.CapacityTypeLabel], "\t", i.Labels[kube.ZoneLabel], "\t", i.Labels[kube.NodeGroupImage], "\t", amiName, "\t", age)
+		// AMI
+		if i.Labels[kube.NodeGroupImage] == "" {
+			amiID = i.Labels[kube.KarpenterImage]
+			dis, _ := ec2Client.DescribeImages(ctx, &ec2.DescribeImagesInput{ImageIds: []string{amiID}})
+			amiName = aws.ToString(dis.Images[0].Name)
+		} else {
+			amiID = i.Labels[kube.NodeGroupImage]
+			dis, _ := ec2Client.DescribeImages(ctx, &ec2.DescribeImagesInput{ImageIds: []string{amiID}})
+			amiName = aws.ToString(dis.Images[0].Name)
+		}
+
+		// Capacity Type
+		if i.Labels[kube.CapacityTypeLabel] != "" {
+			capacityType = i.Labels[kube.CapacityTypeLabel]
+		} else {
+			capacityType = strings.ToUpper(i.Labels[kube.KarpenterCapacityTypeLabel])
+
+		}
+		fmt.Fprintln(w, i.Name, "\t", i.Labels[kube.InstanceTypeLabel], "\t", i.Labels[kube.OsLabel], "\t", capacityType, "\t", i.Labels[kube.ZoneLabel], "\t", amiID, "\t", amiName, "\t", age)
 	}
 	return nil
 }
