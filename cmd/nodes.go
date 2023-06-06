@@ -53,7 +53,7 @@ func nodes(cmd *cobra.Command, args []string) error {
 
 	w := tabwriter.NewWriter(os.Stdout, 5, 2, 3, ' ', tabwriter.TabIndent)
 	defer w.Flush()
-	fmt.Fprintln(w, "NAME", "\t", "INSTANCE-TYPE", "\t", "OS", "\t", "CAPACITY-TYPE", "\t", "REGION", "\t", "AMI-ID", "\t", "AMI-NAME", "\t", "AGE")
+	fmt.Fprintln(w, "NAME", "\t", "INSTANCE-TYPE", "\t", "OS", "\t", "CAPACITY-TYPE", "\t", "ZONE", "\t", "AMI-ID", "\t", "AMI-NAME", "\t", "AGE")
 	for _, i := range nodeList {
 		var amiID, amiName, capacityType string
 		age := kube.GetAge(i.CreationTimestamp)
