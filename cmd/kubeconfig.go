@@ -37,7 +37,7 @@ func kubeconfigCommand(cmd *cobra.Command, args []string) error {
 	// read flag values
 	clusterName, _ := cmd.Flags().GetString("cluster-name")
 	region, _ := cmd.Flags().GetString("region")
-	merge, _ := cmd.Flags().GetBool("merge")
+	out, _ := cmd.Flags().GetBool("out")
 
 	// get Clustername
 	clusterName, err := kube.GetClusterName(clusterName)
@@ -105,7 +105,7 @@ func kubeconfigCommand(cmd *cobra.Command, args []string) error {
 		CurrentContext: clusterName,
 	}
 
-	if merge {
+	if !out {
 		existingPath, _ := kubeconfig.DefaultPath()
 		a, err := kubeconfig.Load(existingPath)
 		if err != nil {
@@ -123,14 +123,14 @@ func kubeconfigCommand(cmd *cobra.Command, args []string) error {
 		}
 		fmt.Println("existing kubeconfig file is merged")
 	} else {
-
-		err = clientcmd.WriteToFile(*config, kubeconfigFilePath)
+		kc, err := clientcmd.Write(*config)
+		// err = clientcmd.WriteToFile(*config, kubeconfigFilePath)
 		if err != nil {
 			fmt.Printf("Failed to write kubeconfig file: %v\n", err)
 			os.Exit(1)
 		}
-
-		fmt.Printf("kubeconfig file created at %s\n", kubeconfigFilePath)
+		fmt.Println(string(kc))
+		// fmt.Printf("kubeconfig file created at %s\n", kubeconfigFilePath)
 	}
 	return nil
 }
@@ -138,5 +138,5 @@ func init() {
 	rootCmd.AddCommand(kubeconfigCmd)
 	kubeconfigCmd.PersistentFlags().String("cluster-name", "", "Cluster name")
 	kubeconfigCmd.PersistentFlags().String("region", "", "region")
-	kubeconfigCmd.PersistentFlags().Bool("merge", false, "Merge into existing kubeconfig")
+	kubeconfigCmd.PersistentFlags().Bool("out", false, "Print kubeconfig")
 }
