@@ -74,7 +74,7 @@ func fargate(cmd *cobra.Command, args []string) error {
 		if err != nil {
 			log.Fatal(err)
 		}
-		fmt.Fprintln(w, profile, "\t", out.FargateProfile.FargateProfileArn, "\t", out.FargateProfile.FargateProfileArn)
+		fmt.Fprintln(w, profile, "\t", aws.ToString(out.FargateProfile.FargateProfileArn), "\t", aws.ToString(out.FargateProfile.FargateProfileArn))
 
 	}
 	return nil
