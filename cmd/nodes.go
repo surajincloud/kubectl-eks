@@ -83,4 +83,6 @@ func nodes(cmd *cobra.Command, args []string) error {
 
 func init() {
 	rootCmd.AddCommand(nodesCmd)
+	nodesCmd.PersistentFlags().String("cluster-name", "", "Cluster name")
+	nodesCmd.PersistentFlags().String("region", "", "region")
 }
