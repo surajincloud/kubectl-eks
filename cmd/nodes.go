@@ -32,14 +32,8 @@ func nodes(cmd *cobra.Command, args []string) error {
 
 	ctx := context.Background()
 	// read flag values
-	clusterName, _ := cmd.Flags().GetString("cluster-name")
 	region, _ := cmd.Flags().GetString("region")
 
-	// get Clustername
-	clusterName, err = kube.GetClusterName(clusterName)
-	if err != nil {
-		log.Fatal(err)
-	}
 	// get region
 	region, err = kube.GetRegion(region)
 	if err != nil {
@@ -83,6 +77,5 @@ func nodes(cmd *cobra.Command, args []string) error {
 
 func init() {
 	rootCmd.AddCommand(nodesCmd)
-	nodesCmd.PersistentFlags().String("cluster-name", "", "Cluster name")
 	nodesCmd.PersistentFlags().String("region", "", "region")
 }
