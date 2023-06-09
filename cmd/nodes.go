@@ -31,17 +31,21 @@ func nodes(cmd *cobra.Command, args []string) error {
 	}
 
 	ctx := context.Background()
+
 	// read flag values
 	region, _ := cmd.Flags().GetString("region")
 
-	// get region
-	region, err = kube.GetRegion(region)
+	cfg, err := config.LoadDefaultConfig(ctx)
 	if err != nil {
 		log.Fatal(err)
 	}
-	cfg, err := config.LoadDefaultConfig(ctx, config.WithRegion(region))
-	if err != nil {
-		log.Fatal(err)
+	if cfg.Region == "" {
+		// get region
+		region, err = kube.GetRegion(region)
+		if err != nil {
+			log.Fatal(err)
+		}
+		cfg.Region = region
 	}
 	ec2Client := ec2.NewFromConfig(cfg)
 
@@ -59,7 +63,10 @@ func nodes(cmd *cobra.Command, args []string) error {
 			amiName = aws.ToString(dis.Images[0].Name)
 		} else {
 			amiID = i.Labels[kube.NodeGroupImage]
-			dis, _ := ec2Client.DescribeImages(ctx, &ec2.DescribeImagesInput{ImageIds: []string{amiID}})
+			dis, err := ec2Client.DescribeImages(ctx, &ec2.DescribeImagesInput{ImageIds: []string{amiID}})
+			if err != nil {
+				log.Fatal(err)
+			}
 			amiName = aws.ToString(dis.Images[0].Name)
 		}
 
