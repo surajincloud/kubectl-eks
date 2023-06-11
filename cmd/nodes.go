@@ -9,9 +9,9 @@ import (
 	"text/tabwriter"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	"github.com/spf13/cobra"
+	awspkg "github.com/surajincloud/kubectl-eks/pkg/aws"
 	"github.com/surajincloud/kubectl-eks/pkg/kube"
 )
 
@@ -35,17 +35,10 @@ func nodes(cmd *cobra.Command, args []string) error {
 	// read flag values
 	region, _ := cmd.Flags().GetString("region")
 
-	cfg, err := config.LoadDefaultConfig(ctx)
+	// aws config
+	cfg, err := awspkg.GetAWSConfig(ctx, region)
 	if err != nil {
 		log.Fatal(err)
-	}
-	if cfg.Region == "" {
-		// get region
-		region, err = kube.GetRegion(region)
-		if err != nil {
-			log.Fatal(err)
-		}
-		cfg.Region = region
 	}
 	ec2Client := ec2.NewFromConfig(cfg)
 

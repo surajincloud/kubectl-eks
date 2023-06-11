@@ -11,9 +11,9 @@ import (
 	"text/tabwriter"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/eks"
 	"github.com/spf13/cobra"
+	awspkg "github.com/surajincloud/kubectl-eks/pkg/aws"
 	"github.com/surajincloud/kubectl-eks/pkg/kube"
 )
 
@@ -44,14 +44,8 @@ func addons(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		log.Fatal(err)
 	}
-	// get region
-	region, err = kube.GetRegion(region)
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	// aws config
-	cfg, err := config.LoadDefaultConfig(ctx, config.WithRegion(region))
+	cfg, err := awspkg.GetAWSConfig(ctx, region)
 	if err != nil {
 		log.Fatal(err)
 	}

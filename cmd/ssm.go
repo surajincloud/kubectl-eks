@@ -9,8 +9,8 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/surajincloud/kubectl-eks/pkg/kube"
 
-	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/mmmorris1975/ssm-session-client/ssmclient"
+	awspkg "github.com/surajincloud/kubectl-eks/pkg/aws"
 )
 
 // ssmCmd represents the ssm command
@@ -25,6 +25,8 @@ var ssmCmd = &cobra.Command{
 }
 
 func performSSM(cmd *cobra.Command, args []string) error {
+	ctx := context.Background()
+
 	nodeList, err := kube.GetNodes(KubernetesConfigFlags)
 	if err != nil {
 		return err
@@ -42,7 +44,8 @@ func performSSM(cmd *cobra.Command, args []string) error {
 
 	target := givenNode
 
-	cfg, err := config.LoadDefaultConfig(context.Background(), config.WithRegion(region))
+	// aws config
+	cfg, err := awspkg.GetAWSConfig(ctx, region)
 	if err != nil {
 		log.Fatal(err)
 	}
