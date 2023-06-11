@@ -3,6 +3,7 @@ package kube
 import (
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -17,6 +18,10 @@ func GetClusterName(clusterName string) (string, error) {
 			clusterName, err := getClusterFromKubeconfig()
 			if err != nil {
 				return "", err
+			}
+			// if clusterName is ARN
+			if strings.HasPrefix(clusterName, "arn") {
+				return strings.Split(clusterName, "/")[len(strings.Split(clusterName, "/"))-1], nil
 			}
 			return clusterName, nil
 		}
