@@ -50,9 +50,13 @@ func addons(cmd *cobra.Command, args []string) error {
 
 	// define eks service
 	eksSvc := eks.NewFromConfig(cfg)
-	descluster, _ := eksSvc.DescribeCluster(ctx, &eks.DescribeClusterInput{
+	descluster, err := eksSvc.DescribeCluster(ctx, &eks.DescribeClusterInput{
 		Name: aws.String(clusterName),
 	})
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
 	clusterVersion := aws.ToString(descluster.Cluster.Version)
 	// List addons
 	resp, err := eksSvc.ListAddons(context.TODO(), &eks.ListAddonsInput{
