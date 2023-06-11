@@ -8,10 +8,10 @@ import (
 	"os"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/eks"
 	kubeconfig "github.com/siderolabs/go-kubeconfig"
 	"github.com/spf13/cobra"
+	awspkg "github.com/surajincloud/kubectl-eks/pkg/aws"
 	"github.com/surajincloud/kubectl-eks/pkg/kube"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/clientcmd/api"
@@ -36,22 +36,16 @@ func kubeconfigCommand(cmd *cobra.Command, args []string) error {
 
 	// read flag values
 	clusterName, _ := cmd.Flags().GetString("cluster-name")
-	region, _ := cmd.Flags().GetString("region")
 	out, _ := cmd.Flags().GetBool("out")
+	region, _ := cmd.Flags().GetString("region")
 
 	// get Clustername
 	clusterName, err := kube.GetClusterName(clusterName)
 	if err != nil {
 		log.Fatal(err)
 	}
-	// get region
-	region, err = kube.GetRegion(region)
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	// aws config
-	cfg, err := config.LoadDefaultConfig(ctx, config.WithRegion(region))
+	cfg, err := awspkg.GetAWSConfig(ctx, region)
 	if err != nil {
 		log.Fatal(err)
 	}

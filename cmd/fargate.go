@@ -11,9 +11,9 @@ import (
 	"text/tabwriter"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/eks"
 	"github.com/spf13/cobra"
+	awspkg "github.com/surajincloud/kubectl-eks/pkg/aws"
 	"github.com/surajincloud/kubectl-eks/pkg/kube"
 )
 
@@ -37,17 +37,11 @@ func fargate(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		log.Fatal(err)
 	}
-	// get region
-	region, err = kube.GetRegion(region)
+
+	// aws config
+	cfg, err := awspkg.GetAWSConfig(ctx, region)
 	if err != nil {
 		log.Fatal(err)
-	}
-
-	// Load AWS configuration from environment variables or default configuration files
-	cfg, err := config.LoadDefaultConfig(ctx, config.WithRegion(region))
-	if err != nil {
-		fmt.Println("Failed to load AWS configuration:", err)
-		os.Exit(1)
 	}
 
 	// Create an EKS client using the loaded configuration
@@ -84,13 +78,4 @@ func init() {
 	rootCmd.AddCommand(fargateCmd)
 	fargateCmd.PersistentFlags().String("cluster-name", "", "Cluster name")
 	fargateCmd.PersistentFlags().String("region", "", "region")
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// fargateCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// fargateCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }

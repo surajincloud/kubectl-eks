@@ -9,10 +9,10 @@ import (
 	"log"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/eks"
 	"github.com/aws/aws-sdk-go-v2/service/ssm"
 	"github.com/spf13/cobra"
+	awspkg "github.com/surajincloud/kubectl-eks/pkg/aws"
 	"github.com/surajincloud/kubectl-eks/pkg/kube"
 )
 
@@ -37,12 +37,8 @@ func suggestion(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		log.Fatal(err)
 	}
-	// get region
-	region, err = kube.GetRegion(region)
-	if err != nil {
-		log.Fatal(err)
-	}
-	cfg, err := config.LoadDefaultConfig(ctx, config.WithRegion(region))
+	// aws config
+	cfg, err := awspkg.GetAWSConfig(ctx, region)
 	if err != nil {
 		log.Fatal(err)
 	}
