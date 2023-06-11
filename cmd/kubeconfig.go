@@ -35,15 +35,15 @@ func kubeconfigCommand(cmd *cobra.Command, args []string) error {
 	ctx := context.Background()
 
 	// read flag values
-	clusterName, _ := cmd.Flags().GetString("cluster-name")
 	out, _ := cmd.Flags().GetBool("out")
 	region, _ := cmd.Flags().GetString("region")
 
 	// get Clustername
-	clusterName, err := kube.GetClusterName(clusterName)
+	clusterName, err := kube.GetClusterName(*KubernetesConfigFlags.ClusterName)
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	// aws config
 	cfg, err := awspkg.GetAWSConfig(ctx, region)
 	if err != nil {
@@ -130,7 +130,6 @@ func kubeconfigCommand(cmd *cobra.Command, args []string) error {
 }
 func init() {
 	rootCmd.AddCommand(kubeconfigCmd)
-	kubeconfigCmd.PersistentFlags().String("cluster-name", "", "Cluster name")
 	kubeconfigCmd.PersistentFlags().String("region", "", "region")
 	kubeconfigCmd.PersistentFlags().Bool("out", false, "Print kubeconfig")
 }

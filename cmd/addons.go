@@ -34,16 +34,14 @@ type Addons struct {
 func addons(cmd *cobra.Command, args []string) error {
 
 	ctx := context.Background()
-
 	// read flag values
-	clusterName, _ := cmd.Flags().GetString("cluster-name")
 	region, _ := cmd.Flags().GetString("region")
 
-	// get Clustername
-	clusterName, err := kube.GetClusterName(clusterName)
+	clusterName, err := kube.GetClusterName(*KubernetesConfigFlags.ClusterName)
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	// aws config
 	cfg, err := awspkg.GetAWSConfig(ctx, region)
 	if err != nil {
@@ -90,6 +88,5 @@ func addons(cmd *cobra.Command, args []string) error {
 
 func init() {
 	rootCmd.AddCommand(addonsCmd)
-	addonsCmd.PersistentFlags().String("cluster-name", "", "Cluster name")
 	addonsCmd.PersistentFlags().String("region", "", "region")
 }

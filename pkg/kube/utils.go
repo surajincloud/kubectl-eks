@@ -14,7 +14,11 @@ func GetClusterName(clusterName string) (string, error) {
 	if clusterName == "" {
 		clusterName = os.Getenv("AWS_EKS_CLUSTER")
 		if clusterName == "" {
-			return "", fmt.Errorf("please pass cluster name with --cluster-name or with AWS_EKS_CLUSTER environment variable")
+			clusterName, err := getClusterFromKubeconfig()
+			if err != nil {
+				return "", err
+			}
+			return clusterName, nil
 		}
 		return clusterName, nil
 	}
