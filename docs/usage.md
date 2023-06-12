@@ -39,6 +39,13 @@ kubectl eks irsa -n app-staging
 ```
 kubectl eks nodes
 ```
+
+## List nodegroups but get more information
+
+```
+kubectl eks nodegroups
+```
+
 ## Access to EKS node via SSM
 
 ```
@@ -51,4 +58,10 @@ kubectl eks ssm <name-of-the-node>
 
 ```
 kubectl eks fargate --cluster your-cluster --region your-region
+```
+
+## Suggest an AMI
+
+```
+kubectl eks suggest-ami
 ```
