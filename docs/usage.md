@@ -1,5 +1,7 @@
 # Usage
 
+> Note: `kubectl-eks` is able to read `region` from aws credentials file, aws profile and environment variable, optionally you can pass it via `--region` flag. it is also able to read cluster name from the kubeconfig context, optionally you can pass it via `--cluster` flag or `AWS_EKS_CLUSTER` environment variable.
+
 ## Creates Kubeconfig
 
 ```
