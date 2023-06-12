@@ -3,7 +3,7 @@
 ## Creates Kubeconfig
 
 ```
-kubectl eks kubeconfig --cluster-name your-cluster --region your-region
+kubectl eks kubeconfig --cluster your-cluster --region your-region --out
 ```
 
 ## Updates existing Kubeconfig
@@ -11,13 +11,13 @@ kubectl eks kubeconfig --cluster-name your-cluster --region your-region
 * fetch and update existing kubeconfig (~/.kube/config)
 
 ```
-kubectl eks kubeconfig --cluster-name your-cluster --region your-region --merge
+kubectl eks kubeconfig --cluster your-cluster --region your-region
 ```
 
 ## List addons
 
 ```
-kubectl eks addons --cluster-name your-cluster --region your-region
+kubectl eks addons --cluster your-cluster --region your-region
 ```
 
 ## List serviceaccount with IRSA information from all namespaces
@@ -48,5 +48,5 @@ kubectl eks ssm <name-of-the-node>
 ## List fargate profiles
 
 ```
-kubectl eks fargate --cluster-name your-cluster --region your-region
+kubectl eks fargate --cluster your-cluster --region your-region
 ```
