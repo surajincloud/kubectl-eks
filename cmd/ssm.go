@@ -15,7 +15,8 @@ import (
 
 // ssmCmd represents the ssm command
 var ssmCmd = &cobra.Command{
-	Use:   "ssm",
+	Use:   "ssm [flags] node",
+	Args:  cobra.ExactArgs(1),
 	Short: "Access given EKS node via SSM",
 	Long: `
 	SSM Access to given EKS Node
