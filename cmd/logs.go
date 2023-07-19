@@ -7,7 +7,10 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"os/exec"
+	"strings"
 
+	"github.com/antchfx/jsonquery"
 	"github.com/aws/aws-sdk-go-v2/service/cloudwatchlogs"
 	"github.com/spf13/cobra"
 	awspkg "github.com/surajincloud/kubectl-eks/pkg/aws"
@@ -16,10 +19,31 @@ import (
 
 // logsCmd represents the logs command
 var logsCmd = &cobra.Command{
-	Use:   "logs",
-	Args:  cobra.ExactArgs(1),
-	Short: "Get logs from an EKS cluster control plane or nodes",
-	Long:  "Allows you to see logs from different components of the EKS control plane or from nodes",
+	Use:               "logs [flags] LOG_SOURCE",
+	ValidArgsFunction: validateArgs,
+	Example: `  kubectl eks logs kube-apiserver
+  kubectl eks logs NODE [query]`,
+	ValidArgs: []string{
+		"kube-scheduler",
+		"kube-apiserver",
+		"kube-apiserver-audit",
+		"kube-controller-manager",
+		"authenticator",
+		"cloud-controller-manager"},
+	ArgAliases: []string{
+		"scheduler",
+		"audit",
+		"kube-audit",
+		"cm",
+		"controller-manager",
+		"api",
+		"apiserver",
+		"auth",
+		"ccm",
+		"cloud-controller"},
+	Args:  cobra.MinimumNArgs(1),
+	Short: "Get logs from EKS control plane or nodes",
+	Long:  "Get logs from EKS control plane or nodes",
 	RunE:  logs,
 }
 
@@ -99,6 +123,8 @@ func logs(cmd *cobra.Command, args []string) error {
 		// nextToken := ""
 
 		for _, event := range resp.Events {
+			// TODO allow for following tokens for more logs
+			// TODO allow -f follow for logs
 			// gotToken = nextToken
 			// nextToken = *resp.NextForwardToken
 
@@ -109,8 +135,44 @@ func logs(cmd *cobra.Command, args []string) error {
 			fmt.Println("  ", *event.Message)
 		}
 	} else {
-		fmt.Println("Logs not found")
-		return nil
+		// we need to assume the target is a node instead of control plane
+		nodeList, err := kube.GetNodes(KubernetesConfigFlags)
+		if err != nil {
+			return err
+		}
+
+		var nodeMatched bool = false
+		var currentNodeSlice []string
+		logTargetSlice := strings.Split(logTarget, ".")
+
+		for _, i := range nodeList {
+			// match node based on substring
+			currentNodeSlice = strings.Split(i.Name, ".")
+			if currentNodeSlice[0] == logTargetSlice[0] {
+				nodeMatched = true
+				var query string
+				// create URL for log fetching
+				rawURL := "/api/v1/nodes/" + i.Name + "/proxy/logs/?query="
+				if len(args) > 1 {
+					query = args[1]
+				} else {
+					query = "kubelet"
+				}
+				// validate kubelet settings for remote logs
+				if validateKubeletConfig(i.Name) {
+					kubeLogsCmdOutput, err := exec.Command("kubectl", "get", "--raw", rawURL+query).Output()
+					if err != nil {
+						log.Fatal(err)
+					}
+					fmt.Printf("%s\n", kubeLogsCmdOutput)
+				}
+			}
+		}
+		if nodeMatched {
+			return nil
+		} else {
+			fmt.Printf("Node %s not found\n", logTarget)
+		}
 	}
 	return nil
 }
@@ -161,6 +223,7 @@ func contains(s []string, str string) bool {
 	return false
 }
 
+// Convert possible log source aliases to full log stream prefix
 func getLogStreamPrefix(logTarget string) string {
 	schedulerSlice := []string{"scheduler", "kube-scheduler"}
 	auditSlice := []string{"audit", "kube-audit", "kube-apiserver-audit"}
@@ -184,5 +247,47 @@ func getLogStreamPrefix(logTarget string) string {
 	} else {
 		return ""
 	}
+}
+
+// for shell completion
+func validateArgs(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	var comps []string
+	if len(args) == 0 {
+		comps = cobra.AppendActiveHelp(comps, "Please select a log source valid options are: kube-scheduler, kube-apiserver-audit, kube-controller-manager, kube-apiserver, authenticator, cloud-controller-manager")
+	} else if len(args) == 1 {
+		comps = cobra.AppendActiveHelp(comps, "You must specify the URL for the repo you are adding")
+	} else {
+		comps = cobra.AppendActiveHelp(comps, "This command does not take any more arguments")
+	}
+	return comps, cobra.ShellCompDirectiveNoFileComp
+}
+
+// validates kubelet config for remote logging
+func validateKubeletConfig(node string) bool {
+	URL := "/api/v1/nodes/" + node + "/proxy/configz"
+	kubeletConfigCmdOutput, err := exec.Command("kubectl", "--request-timeout", "20s", "get", "--raw", URL).Output()
+	if err != nil {
+		log.Fatal(err)
+	}
+	// b := []byte(kubeletConfigCmdOutput)
+	// fmt.Println(b)
+	kubeletConfigJson, err := jsonquery.Parse(strings.NewReader(string(kubeletConfigCmdOutput)))
+	if err != nil {
+		panic(err)
+	}
+
+	nodeLogQuery := jsonquery.FindOne(kubeletConfigJson, "kubeletconfig/featureGates/NodeLogQuery")
+	// fmt.Printf("%T %v %v\n", nodeLogQuery.Value(), nodeLogQuery.Value(), nodeLogQueryValue)
+	systemLogHandler := jsonquery.FindOne(kubeletConfigJson, "kubeletconfig/enableSystemLogHandler")
+	systemLogQuery := jsonquery.FindOne(kubeletConfigJson, "kubeletconfig/enableSystemLogQuery")
+	if (nodeLogQuery != nil) && (systemLogHandler != nil) && (systemLogQuery != nil) {
+		if nodeLogQuery.Value().(bool) {
+			return true
+		}
+	}
+	fmt.Println(`	Node is not configured for remote logs.
+	Please enable remote logging on the kubelet from the documentation here
+	https://kubernetes.io/blog/2023/04/21/node-log-query-alpha/`)
+	return false
 
 }
