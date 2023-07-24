@@ -9,13 +9,29 @@ import (
 	"log"
 	"os/exec"
 	"strings"
+	"time"
 
 	"github.com/antchfx/jsonquery"
+	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/cloudwatchlogs"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/eks"
+	"github.com/markusmobius/go-dateparser"
 	"github.com/spf13/cobra"
 	awspkg "github.com/surajincloud/kubectl-eks/pkg/aws"
 	"github.com/surajincloud/kubectl-eks/pkg/kube"
 )
+
+var Follow bool
+var LineLimit int
+var SinceTime string
+
+func init() {
+	logsCmd.Flags().BoolVarP(&Follow, "follow", "f", false, "Enable log following")
+	logsCmd.Flags().IntVarP(&LineLimit, "lines", "l", 20, "How many lines to include in default output")
+	logsCmd.Flags().StringVar(&SinceTime, "since", "1 hour ago", "What time logs should start from")
+	// TODO parse the string into time format
+}
 
 // logsCmd represents the logs command
 var logsCmd = &cobra.Command{
@@ -77,7 +93,9 @@ func logs(cmd *cobra.Command, args []string) error {
 	}
 
 	if contains(cloudwatchLogStreams, logTarget) {
+		// Check if cluster has cloudwatch enabled
 		cwlGroupPrefix := getLogStreamPrefix(logTarget)
+		logsChan := make(chan string)
 
 		cwlGroupName := "/aws/eks/" + clusterName + "/cluster"
 		var cwlStreamInput cloudwatchlogs.DescribeLogStreamsInput
@@ -88,6 +106,13 @@ func logs(cmd *cobra.Command, args []string) error {
 		ctx := context.Background()
 		// read flag values
 		region, _ := cmd.Flags().GetString("region")
+
+		svc := eks.New(session.New())
+		input := &eks.DescribeClusterInput{
+			Name: aws.String(clusterName),
+		}
+		result, err := svc.DescribeCluster(input)
+		fmt.Println(result.Cluster.Logging.ClusterLogging[0].Enabled)
 
 		cfg, err := awspkg.GetAWSConfig(ctx, region)
 		if err != nil {
@@ -113,26 +138,12 @@ func logs(cmd *cobra.Command, args []string) error {
 		// }
 		newestStream = *streams.LogStreams[0].LogStreamName
 
-		resp, err := getLogEvents(&cwlGroupName, &newestStream, &limit, ctx, cwl)
-		if err != nil {
-			fmt.Println("Got error getting log events:")
-			return err
-		}
+		go getLogEvents(&cwlGroupName, &newestStream, &limit, logsChan, ctx, cwl)
 
-		// gotToken := ""
-		// nextToken := ""
+		// Print each line from logsChan
 
-		for _, event := range resp.Events {
-			// TODO allow for following tokens for more logs
-			// TODO allow -f follow for logs
-			// gotToken = nextToken
-			// nextToken = *resp.NextForwardToken
-
-			// if gotToken == nextToken {
-			// 	break
-			// }
-
-			fmt.Println("  ", *event.Message)
+		for log := range logsChan {
+			fmt.Println(log)
 		}
 	} else {
 		// we need to assume the target is a node instead of control plane
@@ -193,18 +204,52 @@ func ensureLogGroupExists(name string, ctx context.Context, cwl *cloudwatchlogs.
 	return err
 }
 
-func getLogEvents(logGroupName *string, logStreamName *string, limit *int32, ctx context.Context, cwl *cloudwatchlogs.Client) (*cloudwatchlogs.GetLogEventsOutput, error) {
+func getLogEvents(logGroupName *string, logStreamName *string, limit *int32, channel chan<- string, ctx context.Context, cwl *cloudwatchlogs.Client) {
 
-	resp, err := cwl.GetLogEvents(ctx, &cloudwatchlogs.GetLogEventsInput{
-		Limit:         limit,
-		LogGroupName:  logGroupName,
-		LogStreamName: logStreamName,
-	})
+	dt, err := dateparser.Parse(nil, SinceTime)
 	if err != nil {
-		return nil, err
+		panic(err)
 	}
 
-	return resp, nil
+	// loop forever if Follow == true
+	for {
+		resp, err := cwl.GetLogEvents(ctx, &cloudwatchlogs.GetLogEventsInput{
+			Limit:         limit,
+			LogGroupName:  logGroupName,
+			LogStreamName: logStreamName,
+			StartTime:     aws.Int64(dt.Time.UnixMilli()),
+		})
+		if err != nil {
+			panic(err)
+		}
+
+		// gotToken := ""
+		// nextToken := ""
+
+		for _, event := range resp.Events {
+			// TODO allow for following tokens for more logs
+			// TODO allow -f follow for logs
+			// gotToken = nextToken
+			// nextToken = *resp.NextForwardToken
+
+			// if gotToken == nextToken {
+			// 	break
+			// }
+			// fmt.Printf("got message %s\n", *event.Message)
+			channel <- *event.Message
+		}
+
+		if Follow {
+			dt, err = dateparser.Parse(nil, "now")
+			if err != nil {
+				panic(err)
+			}
+			time.Sleep(1 * time.Second)
+		} else {
+			close(channel)
+			break
+		}
+	}
 }
 
 func init() {
@@ -287,7 +332,7 @@ func validateKubeletConfig(node string) bool {
 	}
 	fmt.Println(`	Node is not configured for remote logs.
 	Please enable remote logging on the kubelet from the documentation here
-	https://kubernetes.io/blog/2023/04/21/node-log-query-alpha/`)
+	Requires Kubernetes 1.27 https://kubernetes.io/blog/2023/04/21/node-log-query-alpha/`)
 	return false
 
 }
