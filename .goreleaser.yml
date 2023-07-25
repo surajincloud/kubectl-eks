@@ -22,8 +22,7 @@ builds:
       - darwin_arm64
     env:
       - CGO_ENABLED=0
-    flags:
-      - -v
+
 brews:
 - name: kubectl-eks
   homepage: https://github.com/surajincloud/homebrew-tools 
