@@ -7,8 +7,11 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"os"
 	"os/exec"
+	"os/signal"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/antchfx/jsonquery"
@@ -72,6 +75,7 @@ func logs(cmd *cobra.Command, args []string) error {
 	}
 
 	logTarget := args[0]
+	logsChan := make(chan string)
 
 	cloudwatchLogStreams := []string{
 		"scheduler",
@@ -92,10 +96,17 @@ func logs(cmd *cobra.Command, args []string) error {
 		"cloud-controller-manager",
 	}
 
+	// handle ctl+c interrupt
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		<-c
+		os.Exit(0)
+	}()
+
 	if contains(cloudwatchLogStreams, logTarget) {
 		// Check if cluster has cloudwatch enabled
 		cwlGroupPrefix := getLogStreamPrefix(logTarget)
-		logsChan := make(chan string)
 
 		cwlGroupName := "/aws/eks/" + clusterName + "/cluster"
 		var cwlStreamInput cloudwatchlogs.DescribeLogStreamsInput
@@ -146,7 +157,7 @@ func logs(cmd *cobra.Command, args []string) error {
 			fmt.Println(log)
 		}
 	} else {
-		// we need to assume the target is a node instead of control plane
+		// we assume the target is a node instead of control plane
 		nodeList, err := kube.GetNodes(KubernetesConfigFlags)
 		if err != nil {
 			return err
@@ -157,25 +168,30 @@ func logs(cmd *cobra.Command, args []string) error {
 		logTargetSlice := strings.Split(logTarget, ".")
 
 		for _, i := range nodeList {
-			// match node based on substring
+			// match node based on substring eg. ip-192-168-1-1
 			currentNodeSlice = strings.Split(i.Name, ".")
 			if currentNodeSlice[0] == logTargetSlice[0] {
 				nodeMatched = true
-				var query string
-				// create URL for log fetching
-				rawURL := "/api/v1/nodes/" + i.Name + "/proxy/logs/?query="
+				var query []string
+
+				// use all additional arguments as services to query
 				if len(args) > 1 {
-					query = args[1]
+					query = args[1:]
 				} else {
-					query = "kubelet"
+					query = append(query, "kubelet")
 				}
+
 				// validate kubelet settings for remote logs
 				if validateKubeletConfig(i.Name) {
-					kubeLogsCmdOutput, err := exec.Command("kubectl", "get", "--raw", rawURL+query).Output()
-					if err != nil {
-						log.Fatal(err)
+					// get logs and assume query is journald and can accept sinceTime
+					go getNodeLogs(i.Name, query, false, logsChan)
+
+					// print each line from logsChan
+					for log := range logsChan {
+
+						fmt.Println(log)
+
 					}
-					fmt.Printf("%s\n", kubeLogsCmdOutput)
 				}
 			}
 		}
@@ -186,6 +202,74 @@ func logs(cmd *cobra.Command, args []string) error {
 		}
 	}
 	return nil
+}
+
+// get node logs
+func getNodeLogs(node string, query []string, fileQuery bool, channel chan<- string) {
+	dt, err := dateparser.Parse(nil, SinceTime)
+	if err != nil {
+		panic(err)
+	}
+	// create URL for log fetching
+	rawURL := "/api/v1/nodes/" + node + "/proxy/logs/?query="
+	for {
+		// assume we're matching a journald query
+		var fullURL string
+
+		urlTime := "&sinceTime=" + dt.Time.Format(time.RFC3339)
+		urlQuery := strings.Join(query, "&query=")
+
+		if fileQuery {
+			fullURL = rawURL + urlQuery
+		} else {
+			fullURL = rawURL + urlQuery + urlTime
+		}
+		fmt.Println(fullURL)
+
+		kubeLogsCmdOutput, err := exec.Command("kubectl", "get", "--raw", fullURL).Output()
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		// api returns a byte string
+		// convert to string and split by newline to send each line to channel
+		for _, logLine := range strings.Split(string(kubeLogsCmdOutput[:]), "\n") {
+			// fmt.Printf("%v %s", lineNumber, logLine)
+			if strings.Contains(logLine, "options present and query resolved to log files") {
+				// file queries cannot use sinceTime
+				fmt.Println("requerying without sinceTime")
+				go getNodeLogs(node, query, true, channel)
+				break
+			} else if logLine == "" ||
+				strings.Contains(logLine, "-- No entries --") ||
+				strings.Contains(logLine, "-- Logs begin at ") {
+				// don't send log decorations
+			} else {
+				channel <- logLine
+			}
+		}
+
+		if Follow {
+			if fileQuery {
+				fmt.Println("Cannot follow file queries")
+				close(channel)
+				break
+			}
+			dt, err = dateparser.Parse(nil, "now")
+			if err != nil {
+				panic(err)
+			}
+			time.Sleep(1 * time.Second)
+		} else {
+			// how to handle closing channel when
+			// querying journald services
+			// if we close too early then file query doesn't work
+			if fileQuery {
+				close(channel)
+			}
+			break
+		}
+	}
 }
 
 // ensureLogGroupExists first checks if the log group exists
