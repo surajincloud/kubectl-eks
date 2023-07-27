@@ -17,8 +17,6 @@ import (
 	"github.com/antchfx/jsonquery"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/cloudwatchlogs"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/eks"
 	"github.com/markusmobius/go-dateparser"
 	"github.com/spf13/cobra"
 	awspkg "github.com/surajincloud/kubectl-eks/pkg/aws"
@@ -26,12 +24,10 @@ import (
 )
 
 var Follow bool
-var LineLimit int
 var SinceTime string
 
 func init() {
-	logsCmd.Flags().BoolVarP(&Follow, "follow", "f", false, "Enable log following")
-	logsCmd.Flags().IntVarP(&LineLimit, "lines", "l", 20, "How many lines to include in default output")
+	logsCmd.Flags().BoolVarP(&Follow, "follow", "f", false, "Follow logs (not available for node file queries)")
 	logsCmd.Flags().StringVar(&SinceTime, "since", "1 hour ago", "What time logs should start from")
 	// TODO parse the string into time format
 }
@@ -40,8 +36,12 @@ func init() {
 var logsCmd = &cobra.Command{
 	Use:               "logs [flags] LOG_SOURCE",
 	ValidArgsFunction: validateArgs,
-	Example: `  kubectl eks logs kube-apiserver
-  kubectl eks logs NODE [query]`,
+	Example: `    kubectl eks logs kube-apiserver
+    kubectl eks logs NODE [kubelet]
+  
+  Query multiple log sources:
+    kubectl eks logs api audit scheduler
+    kubectl eks logs NODE kubelet containerd`,
 	ValidArgs: []string{
 		"kube-scheduler",
 		"kube-apiserver",
@@ -74,8 +74,10 @@ func logs(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	// we only look at the first argument to determine if it is a control plane log source or node
 	logTarget := args[0]
 	logsChan := make(chan string)
+	logsDoneChan := make(chan bool, len(args))
 
 	cloudwatchLogStreams := []string{
 		"scheduler",
@@ -104,26 +106,36 @@ func logs(cmd *cobra.Command, args []string) error {
 		os.Exit(0)
 	}()
 
-	if contains(cloudwatchLogStreams, logTarget) {
-		// Check if cluster has cloudwatch enabled
-		cwlGroupPrefix := getLogStreamPrefix(logTarget)
+	// check first argument if it is a control plane log source or node
+	if contains(cloudwatchLogStreams, logTarget) || (logTarget == "all") {
+
+		if logTarget == "all" {
+			args = args[1:]
+			args = append(args, "scheduler", "kube-apiserver-audit", "kube-controller-manager", "kube-apiserver", "authenticator", "cloud-controller-manager")
+		}
+
+		var cwlStreamInput cloudwatchlogs.DescribeLogStreamsInput
+		var streams *cloudwatchlogs.DescribeLogStreamsOutput
+		var streamSlice []string
+		var limit int32 = 100
+		var cwlGroupPrefix string
 
 		cwlGroupName := "/aws/eks/" + clusterName + "/cluster"
-		var cwlStreamInput cloudwatchlogs.DescribeLogStreamsInput
 		cwlStreamInput.LogGroupName = &cwlGroupName
-		cwlStreamInput.LogStreamNamePrefix = &cwlGroupPrefix
 
 		// aws config
 		ctx := context.Background()
 		// read flag values
 		region, _ := cmd.Flags().GetString("region")
 
-		svc := eks.New(session.New())
-		input := &eks.DescribeClusterInput{
-			Name: aws.String(clusterName),
-		}
-		result, err := svc.DescribeCluster(input)
-		fmt.Println(result.Cluster.Logging.ClusterLogging[0].Enabled)
+		// TODO check if logging is enabled
+		// TODO allow user to enable logging
+		// svc := eks.New(session.New())
+		// input := &eks.DescribeClusterInput{
+		// 	Name: aws.String(clusterName),
+		// }
+		// result, err := svc.DescribeCluster(input)
+		// fmt.Println(result.Cluster.Logging.ClusterLogging[0].Enabled)
 
 		cfg, err := awspkg.GetAWSConfig(ctx, region)
 		if err != nil {
@@ -138,23 +150,28 @@ func logs(cmd *cobra.Command, args []string) error {
 			panic(err)
 		}
 
-		var newestStream string
-		var limit int32 = 100
-		streams, err := cwl.DescribeLogStreams(ctx, &cwlStreamInput)
-		if err != nil {
-			log.Fatal(err)
-		}
-		// for _, stream := range streams.LogStreams {
-		// 	fmt.Printf("%s\n", *stream.LogStreamName)
-		// }
-		newestStream = *streams.LogStreams[0].LogStreamName
+		for i, logSource := range args {
 
-		go getLogEvents(&cwlGroupName, &newestStream, &limit, logsChan, ctx, cwl)
+			cwlGroupPrefix = getLogStreamPrefix(logSource)
+			cwlStreamInput.LogStreamNamePrefix = &cwlGroupPrefix
+			streams, err = cwl.DescribeLogStreams(ctx, &cwlStreamInput)
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			// get the newest log stream with the group prefix
+			streamSlice = append(streamSlice, *streams.LogStreams[0].LogStreamName)
+
+			go getLogEvents(&cwlGroupName, &streamSlice[i], &limit, logsChan, logsDoneChan, ctx, cwl, len(args))
+		}
 
 		// Print each line from logsChan
-
 		for log := range logsChan {
-			fmt.Println(log)
+			fmt.Fprintln(os.Stderr, log)
+
+			if len(logsDoneChan) == len(args) {
+				close(logsChan)
+			}
 		}
 	} else {
 		// we assume the target is a node instead of control plane
@@ -198,7 +215,7 @@ func logs(cmd *cobra.Command, args []string) error {
 		if nodeMatched {
 			return nil
 		} else {
-			fmt.Printf("Node %s not found\n", logTarget)
+			fmt.Printf("Node %s not found\nTo query control plane logs please see options in --help output.\n", logTarget)
 		}
 	}
 	return nil
@@ -224,7 +241,6 @@ func getNodeLogs(node string, query []string, fileQuery bool, channel chan<- str
 		} else {
 			fullURL = rawURL + urlQuery + urlTime
 		}
-		fmt.Println(fullURL)
 
 		kubeLogsCmdOutput, err := exec.Command("kubectl", "get", "--raw", fullURL).Output()
 		if err != nil {
@@ -288,7 +304,7 @@ func ensureLogGroupExists(name string, ctx context.Context, cwl *cloudwatchlogs.
 	return err
 }
 
-func getLogEvents(logGroupName *string, logStreamName *string, limit *int32, channel chan<- string, ctx context.Context, cwl *cloudwatchlogs.Client) {
+func getLogEvents(logGroupName *string, logStreamName *string, limit *int32, logsChan chan<- string, logsDoneChan chan<- bool, ctx context.Context, cwl *cloudwatchlogs.Client, totalStreams int) {
 
 	dt, err := dateparser.Parse(nil, SinceTime)
 	if err != nil {
@@ -310,29 +326,28 @@ func getLogEvents(logGroupName *string, logStreamName *string, limit *int32, cha
 		// gotToken := ""
 		// nextToken := ""
 
-		for _, event := range resp.Events {
-			// TODO allow for following tokens for more logs
-			// TODO allow -f follow for logs
-			// gotToken = nextToken
-			// nextToken = *resp.NextForwardToken
+		for i, event := range resp.Events {
+			// TODO allow for following tokens for more logs from different streams
 
-			// if gotToken == nextToken {
-			// 	break
-			// }
-			// fmt.Printf("got message %s\n", *event.Message)
-			channel <- *event.Message
-		}
-
-		if Follow {
-			dt, err = dateparser.Parse(nil, "now")
-			if err != nil {
-				panic(err)
+			if i == len(resp.Events)-1 {
+				if Follow {
+					dt, err = dateparser.Parse(nil, "now")
+					if err != nil {
+						panic(err)
+					}
+					// wait 1 sec before querying again
+					time.Sleep(1 * time.Second)
+				} else {
+					fmt.Println("closing channel for", *logStreamName)
+					logsDoneChan <- true
+				}
+				logsChan <- *event.Message
+			} else {
+				logsChan <- *event.Message
 			}
-			time.Sleep(1 * time.Second)
-		} else {
-			close(channel)
-			break
+
 		}
+
 	}
 }
 

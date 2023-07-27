@@ -4,7 +4,6 @@ go 1.20
 
 require (
 	github.com/antchfx/jsonquery v1.3.2
-	github.com/aws/aws-sdk-go v1.44.76
 	github.com/aws/aws-sdk-go-v2 v1.19.0
 	github.com/aws/aws-sdk-go-v2/config v1.18.13
 	github.com/aws/aws-sdk-go-v2/service/cloudwatchlogs v1.22.1
@@ -23,6 +22,7 @@ require (
 
 require (
 	github.com/antchfx/xpath v1.2.3 // indirect
+	github.com/aws/aws-sdk-go v1.44.76 // indirect
 	github.com/aws/aws-sdk-go-v2/credentials v1.13.13 // indirect
 	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.12.22 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/configsources v1.1.35 // indirect
