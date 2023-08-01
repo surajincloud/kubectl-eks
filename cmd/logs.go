@@ -28,7 +28,6 @@ var SinceTime string
 func init() {
 	logsCmd.Flags().BoolVarP(&Follow, "follow", "f", false, "Follow logs (not available for node file queries)")
 	logsCmd.Flags().StringVar(&SinceTime, "since", "1 hour ago", "What time logs should start from")
-	// TODO parse the string into time format
 }
 
 // logsCmd represents the logs command
@@ -166,8 +165,10 @@ func logs(cmd *cobra.Command, args []string) error {
 
 		// Print each line from logsChan
 		for log := range logsChan {
-			fmt.Fprintln(os.Stderr, log)
+			// print the log
+			fmt.Println(log)
 
+			// once all event streams are done, close the channel
 			if len(logsDoneChan) == len(args) {
 				close(logsChan)
 			}
@@ -200,13 +201,16 @@ func logs(cmd *cobra.Command, args []string) error {
 				// validate kubelet settings for remote logs
 				if validateKubeletConfig(i.Name) {
 					// get logs and assume query is journald and can accept sinceTime
-					go getNodeLogs(i.Name, query, false, logsChan)
+					go getNodeLogs(i.Name, query, false, logsChan, logsDoneChan)
 
 					// print each line from logsChan
 					for log := range logsChan {
 
 						fmt.Println(log)
 
+						if len(logsDoneChan) == 1 {
+							close(logsChan)
+						}
 					}
 				}
 			}
@@ -221,7 +225,8 @@ func logs(cmd *cobra.Command, args []string) error {
 }
 
 // get node logs
-func getNodeLogs(node string, query []string, fileQuery bool, channel chan<- string) {
+func getNodeLogs(node string, query []string, fileQuery bool, logsChan chan<- string, logsDoneChan chan<- bool) {
+
 	dt, err := dateparser.Parse(nil, SinceTime)
 	if err != nil {
 		panic(err)
@@ -256,21 +261,21 @@ func getNodeLogs(node string, query []string, fileQuery bool, channel chan<- str
 			if strings.Contains(logLine, "options present and query resolved to log files") {
 				// file queries cannot use sinceTime
 				// we catch this error output and run again as file query
-				go getNodeLogs(node, query, true, channel)
+				go getNodeLogs(node, query, true, logsChan, logsDoneChan)
 				break
 			} else if logLine == "" ||
 				strings.Contains(logLine, "-- No entries --") ||
 				strings.Contains(logLine, "-- Logs begin at ") {
 				// don't send log decorations
 			} else {
-				channel <- logLine
+				logsChan <- logLine
 			}
 		}
 
 		if Follow {
 			if fileQuery {
-				fmt.Println("Cannot follow file queries")
-				close(channel)
+				fmt.Fprintln(os.Stderr, "Cannot follow file queries")
+				close(logsChan)
 				break
 			}
 			dt, err = dateparser.Parse(nil, "now")
@@ -279,11 +284,10 @@ func getNodeLogs(node string, query []string, fileQuery bool, channel chan<- str
 			}
 			time.Sleep(1 * time.Second)
 		} else {
-			// how to handle closing channel when
-			// querying journald services
-			// if we close too early then file query doesn't work
 			if fileQuery {
-				close(channel)
+				close(logsChan)
+			} else {
+				logsDoneChan <- true
 			}
 			break
 		}
@@ -325,9 +329,6 @@ func getLogEvents(logGroupName *string, logStreamName *string, limit *int32, log
 			panic(err)
 		}
 
-		// gotToken := ""
-		// nextToken := ""
-
 		for i, event := range resp.Events {
 			// TODO allow for following tokens for more logs from different streams
 
@@ -340,7 +341,6 @@ func getLogEvents(logGroupName *string, logStreamName *string, limit *int32, log
 					// wait 1 sec before querying again
 					time.Sleep(1 * time.Second)
 				} else {
-					fmt.Println("closing channel for", *logStreamName)
 					logsDoneChan <- true
 				}
 				logsChan <- *event.Message
