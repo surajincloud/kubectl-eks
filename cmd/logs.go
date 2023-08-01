@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"os/exec"
 	"os/signal"
 	"strings"
 	"syscall"
@@ -228,32 +227,35 @@ func getNodeLogs(node string, query []string, fileQuery bool, channel chan<- str
 		panic(err)
 	}
 	// create URL for log fetching
-	rawURL := "/api/v1/nodes/" + node + "/proxy/logs/?query="
+	rawURL := "/api/v1/nodes/" + node + "/proxy/logs/"
+
 	for {
-		// assume we're matching a journald query
-		var fullURL string
 
-		urlTime := "&sinceTime=" + dt.Time.Format(time.RFC3339)
-		urlQuery := strings.Join(query, "&query=")
+		clientSet, _ := kube.ClientSet(KubernetesConfigFlags)
+		req := clientSet.RESTClient().Get().
+			AbsPath(rawURL)
 
-		if fileQuery {
-			fullURL = rawURL + urlQuery
-		} else {
-			fullURL = rawURL + urlQuery + urlTime
+		for _, q := range query {
+			req.Param("query", q)
 		}
 
-		kubeLogsCmdOutput, err := exec.Command("kubectl", "get", "--raw", fullURL).Output()
+		if !fileQuery {
+			// sinceTime is ignored for file queries
+			req.Param("sinceTime", dt.Time.Format(time.RFC3339))
+		}
+
+		resp, err := req.DoRaw(context.Background())
 		if err != nil {
-			log.Fatal(err)
+			log.Panicln(err, req.URL().String())
 		}
 
 		// api returns a byte string
 		// convert to string and split by newline to send each line to channel
-		for _, logLine := range strings.Split(string(kubeLogsCmdOutput[:]), "\n") {
+		for _, logLine := range strings.Split(string(resp), "\n") {
 			// fmt.Printf("%v %s", lineNumber, logLine)
 			if strings.Contains(logLine, "options present and query resolved to log files") {
 				// file queries cannot use sinceTime
-				fmt.Println("requerying without sinceTime")
+				// we catch this error output and run again as file query
 				go getNodeLogs(node, query, true, channel)
 				break
 			} else if logLine == "" ||
@@ -408,18 +410,23 @@ func validateArgs(cmd *cobra.Command, args []string, toComplete string) ([]strin
 
 // validates kubelet config for remote logging
 func validateKubeletConfig(node string) bool {
-	URL := "/api/v1/nodes/" + node + "/proxy/configz"
-	kubeletConfigCmdOutput, err := exec.Command("kubectl", "--request-timeout", "20s", "get", "--raw", URL).Output()
+	rawURL := "/api/v1/nodes/" + node + "/proxy/configz"
+	clientSet, _ := kube.ClientSet(KubernetesConfigFlags)
+	req := clientSet.RESTClient().Get().
+		AbsPath(rawURL).Timeout(20 * time.Second)
+
+	resp, err := req.DoRaw(context.Background())
 	if err != nil {
-		log.Fatal(err)
+		log.Panicln(err, req.URL().String())
 	}
-	// b := []byte(kubeletConfigCmdOutput)
-	// fmt.Println(b)
-	kubeletConfigJson, err := jsonquery.Parse(strings.NewReader(string(kubeletConfigCmdOutput)))
+
+	// read the kueblet config json
+	kubeletConfigJson, err := jsonquery.Parse(strings.NewReader(string(resp)))
 	if err != nil {
 		panic(err)
 	}
 
+	// check if the node has the appropriate config for remote logging
 	nodeLogQuery := jsonquery.FindOne(kubeletConfigJson, "kubeletconfig/featureGates/NodeLogQuery")
 	// fmt.Printf("%T %v %v\n", nodeLogQuery.Value(), nodeLogQuery.Value(), nodeLogQueryValue)
 	systemLogHandler := jsonquery.FindOne(kubeletConfigJson, "kubeletconfig/enableSystemLogHandler")
@@ -429,9 +436,10 @@ func validateKubeletConfig(node string) bool {
 			return true
 		}
 	}
-	fmt.Println(`	Node is not configured for remote logs.
+	fmt.Printf(`	Node %s is not configured for remote logs.
 	Please enable remote logging on the kubelet from the documentation here
-	Requires Kubernetes 1.27 https://kubernetes.io/blog/2023/04/21/node-log-query-alpha/`)
+	Requires Kubernetes 1.27 https://kubernetes.io/blog/2023/04/21/node-log-query-alpha/`, node)
+
 	return false
 
 }
