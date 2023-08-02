@@ -16,6 +16,7 @@ import (
 	"github.com/antchfx/jsonquery"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/cloudwatchlogs"
+	"github.com/aws/aws-sdk-go-v2/service/eks"
 	"github.com/markusmobius/go-dateparser"
 	"github.com/spf13/cobra"
 	awspkg "github.com/surajincloud/kubectl-eks/pkg/aws"
@@ -114,7 +115,6 @@ func logs(cmd *cobra.Command, args []string) error {
 
 		var cwlStreamInput cloudwatchlogs.DescribeLogStreamsInput
 		var streams *cloudwatchlogs.DescribeLogStreamsOutput
-		var streamSlice []string
 		var limit int32 = 100
 		var cwlGroupPrefix string
 
@@ -126,18 +126,22 @@ func logs(cmd *cobra.Command, args []string) error {
 		// read flag values
 		region, _ := cmd.Flags().GetString("region")
 
-		// TODO check if logging is enabled
-		// TODO allow user to enable logging
-		// svc := eks.New(session.New())
-		// input := &eks.DescribeClusterInput{
-		// 	Name: aws.String(clusterName),
-		// }
-		// result, err := svc.DescribeCluster(input)
-		// fmt.Println(result.Cluster.Logging.ClusterLogging[0].Enabled)
-
 		cfg, err := awspkg.GetAWSConfig(ctx, region)
 		if err != nil {
 			log.Fatal(err)
+		}
+
+		// TODO check if logging is enabled
+		// TODO allow user to enable logging
+		svc := eks.NewFromConfig(cfg)
+		eksClusterInput := &eks.DescribeClusterInput{
+			Name: aws.String(clusterName),
+		}
+		result, _ := svc.DescribeCluster(ctx, eksClusterInput)
+		// check if logging is enabled
+		if !*result.Cluster.Logging.ClusterLogging[0].Enabled == true {
+			fmt.Println("Logging is not enabled for this cluster. Please enable logging and try again.")
+			os.Exit(1)
 		}
 
 		cwl := cloudwatchlogs.NewFromConfig(cfg)
@@ -148,29 +152,54 @@ func logs(cmd *cobra.Command, args []string) error {
 			panic(err)
 		}
 
-		for i, logSource := range args {
+		var fetchStream string
+		matchedStream := 0
+		for _, logSource := range args {
 
 			cwlGroupPrefix = getLogStreamPrefix(logSource)
 			cwlStreamInput.LogStreamNamePrefix = &cwlGroupPrefix
+
 			streams, err = cwl.DescribeLogStreams(ctx, &cwlStreamInput)
 			if err != nil {
 				log.Fatal(err)
 			}
 
-			// get the newest log stream with the group prefix
-			streamSlice = append(streamSlice, *streams.LogStreams[0].LogStreamName)
+			if len(streams.LogStreams) == 0 {
+				fmt.Fprintln(os.Stderr, "No log streams found for", cwlGroupPrefix)
+			} else if cwlGroupPrefix == "kube-apiserver" {
+				// we have to make sure kube-apiserver doesn't add kube-apiserver-audit logs
+				for _, stream := range streams.LogStreams {
+					if !strings.Contains(*stream.LogStreamName, "kube-apiserver-audit") {
+						fetchStream = *stream.LogStreamName
+						// only match the first stream
+						break
+					}
+				}
+				if fetchStream == "" {
+					fmt.Fprintln(os.Stderr, "No log streams found for", cwlGroupPrefix)
+				} else {
+					go getLogEvents(&cwlGroupName, &fetchStream, &limit, logsChan, logsDoneChan, ctx, cwl, len(args))
+					matchedStream++
 
-			go getLogEvents(&cwlGroupName, &streamSlice[i], &limit, logsChan, logsDoneChan, ctx, cwl, len(args))
+				}
+			} else {
+				fetchStream = *streams.LogStreams[0].LogStreamName
+				go getLogEvents(&cwlGroupName, &fetchStream, &limit, logsChan, logsDoneChan, ctx, cwl, len(args))
+				matchedStream++
+			}
 		}
 
-		// Print each line from logsChan
-		for log := range logsChan {
-			// print the log
-			fmt.Println(log)
+		// use a count to make sure we have a goroutine fetching logs
+		if matchedStream > 0 {
+			// Print each line from logsChan
+			for log := range logsChan {
+				// print the log
+				fmt.Println(log)
 
-			// once all event streams are done, close the channel
-			if len(logsDoneChan) == len(args) {
-				close(logsChan)
+				// once all event streams are done, close the channel
+				if len(logsDoneChan) == len(args) {
+					close(logsChan)
+				}
 			}
 		}
 	} else {
