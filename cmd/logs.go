@@ -33,38 +33,22 @@ func init() {
 
 // logsCmd represents the logs command
 var logsCmd = &cobra.Command{
-	Use:               "logs [flags] LOG_SOURCE",
-	ValidArgsFunction: validateArgs,
+	Use: "logs [flags] LOG_SOURCE",
 	Example: `    kubectl eks logs kube-apiserver
     kubectl eks logs NODE [kubelet]
   
   Query multiple log sources:
     kubectl eks logs api audit scheduler
     kubectl eks logs NODE kubelet containerd`,
-	ValidArgs: []string{
-		"kube-scheduler",
-		"kube-apiserver",
-		"kube-apiserver-audit",
-		"kube-controller-manager",
-		"authenticator",
-		"cloud-controller-manager"},
-	ArgAliases: []string{
-		"scheduler",
-		"audit",
-		"kube-audit",
-		"cm",
-		"controller-manager",
-		"api",
-		"apiserver",
-		"auth",
-		"ccm",
-		"cloud-controller"},
 	Args:  cobra.MinimumNArgs(1),
 	Short: "Get logs from EKS control plane or nodes",
 	Long:  "Get logs from EKS control plane or nodes",
 	RunE:  logs,
 }
 
+// the main logs function is responsible for routing the request
+// to the correct log endpoint (cloudwatch or kubelet) and
+// printing the logs to stdout from the logs channel
 func logs(cmd *cobra.Command, args []string) error {
 
 	// pass empty string to let fuction get name
@@ -97,7 +81,7 @@ func logs(cmd *cobra.Command, args []string) error {
 		"cloud-controller-manager",
 	}
 
-	// handle ctl+c interrupt
+	// handle ctl+c interrupt without printing output
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 	go func() {
@@ -253,7 +237,11 @@ func logs(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-// get node logs
+// fetches logs from a node using the kubelet api
+// sends logs to the logsChan and sends a bool to logsDoneChan when done
+// there are additional queries that can be used on the kubelet API but
+// I wanted to keep the UX simple so people should rely on CLI tools
+// to filter logs further
 func getNodeLogs(node string, query []string, fileQuery bool, logsChan chan<- string, logsDoneChan chan<- bool) {
 
 	dt, err := dateparser.Parse(nil, SinceTime)
@@ -324,6 +312,8 @@ func getNodeLogs(node string, query []string, fileQuery bool, logsChan chan<- st
 }
 
 // ensureLogGroupExists first checks if the log group exists
+// Cluster logging can be enabled but the log group may not exist
+// this is because not all control plane components need logging enabled
 func ensureLogGroupExists(name string, ctx context.Context, cwl *cloudwatchlogs.Client) error {
 	resp, err := cwl.DescribeLogGroups(ctx, &cloudwatchlogs.DescribeLogGroupsInput{})
 	if err != nil {
@@ -339,6 +329,10 @@ func ensureLogGroupExists(name string, ctx context.Context, cwl *cloudwatchlogs.
 	return err
 }
 
+// fetchLogs fetches logs from a cloudwatch stream
+// sends logs to the logsChan and sends true to logsDoneChan when done
+// logs are not guaranteed to be in order because they are fetched from each source
+// individually and no ordering is performed on the channel before printing
 func getLogEvents(logGroupName *string, logStreamName *string, limit *int32, logsChan chan<- string, logsDoneChan chan<- bool, ctx context.Context, cwl *cloudwatchlogs.Client, totalStreams int) {
 
 	dt, err := dateparser.Parse(nil, SinceTime)
@@ -360,6 +354,7 @@ func getLogEvents(logGroupName *string, logStreamName *string, limit *int32, log
 
 		for i, event := range resp.Events {
 			// TODO allow for following tokens for more logs from different streams
+			// currently we only fetch the newest stream which may not have all logs
 
 			if i == len(resp.Events)-1 {
 				if Follow {
@@ -382,12 +377,13 @@ func getLogEvents(logGroupName *string, logStreamName *string, limit *int32, log
 	}
 }
 
+// initialize command and get region
 func init() {
 	rootCmd.AddCommand(logsCmd)
 	logsCmd.PersistentFlags().String("region", "", "region")
 }
 
-// contains checks if a string is present in a slice
+// check if a string is present in a slice
 func contains(s []string, str string) bool {
 	for _, v := range s {
 		if v == str {
@@ -399,6 +395,8 @@ func contains(s []string, str string) bool {
 }
 
 // Convert possible log source aliases to full log stream prefix
+// needed because log streams have defined prefixes but we allow
+// multiple aliases for each log source
 func getLogStreamPrefix(logTarget string) string {
 	schedulerSlice := []string{"scheduler", "kube-scheduler"}
 	auditSlice := []string{"audit", "kube-audit", "kube-apiserver-audit"}
@@ -424,20 +422,10 @@ func getLogStreamPrefix(logTarget string) string {
 	}
 }
 
-// for shell completion
-func validateArgs(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-	var comps []string
-	if len(args) == 0 {
-		comps = cobra.AppendActiveHelp(comps, "Please select a log source valid options are: kube-scheduler, kube-apiserver-audit, kube-controller-manager, kube-apiserver, authenticator, cloud-controller-manager")
-	} else if len(args) == 1 {
-		comps = cobra.AppendActiveHelp(comps, "You must specify the URL for the repo you are adding")
-	} else {
-		comps = cobra.AppendActiveHelp(comps, "This command does not take any more arguments")
-	}
-	return comps, cobra.ShellCompDirectiveNoFileComp
-}
-
 // validates kubelet config for remote logging
+// fetches the full config from the configz endpoint
+// verifies if the settings are set correctly
+// there's currently no way I know to change this without restarting the kubelet
 func validateKubeletConfig(node string) bool {
 	rawURL := "/api/v1/nodes/" + node + "/proxy/configz"
 	clientSet, _ := kube.ClientSet(KubernetesConfigFlags)
@@ -457,7 +445,7 @@ func validateKubeletConfig(node string) bool {
 
 	// check if the node has the appropriate config for remote logging
 	nodeLogQuery := jsonquery.FindOne(kubeletConfigJson, "kubeletconfig/featureGates/NodeLogQuery")
-	// fmt.Printf("%T %v %v\n", nodeLogQuery.Value(), nodeLogQuery.Value(), nodeLogQueryValue)
+
 	systemLogHandler := jsonquery.FindOne(kubeletConfigJson, "kubeletconfig/enableSystemLogHandler")
 	systemLogQuery := jsonquery.FindOne(kubeletConfigJson, "kubeletconfig/enableSystemLogQuery")
 	if (nodeLogQuery != nil) && (systemLogHandler != nil) && (systemLogQuery != nil) {
@@ -465,6 +453,7 @@ func validateKubeletConfig(node string) bool {
 			return true
 		}
 	}
+	// if the node doesn't have the appropriate config, print a message
 	fmt.Printf(`	Node %s is not configured for remote logs.
 	Please enable remote logging on the kubelet from the documentation here
 	Requires Kubernetes 1.27 https://kubernetes.io/blog/2023/04/21/node-log-query-alpha/`, node)
