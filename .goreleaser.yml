@@ -1,6 +1,6 @@
-brews:
-- name: kubectl-eks
-  homepage: https://github.com/surajincloud/homebrew-tools 
-  tap:
-    owner: surajincloud
-    name: homebrew-tools
+# brews:
+# - name: kubectl-eks
+#   homepage: https://github.com/surajincloud/homebrew-tools 
+#   tap:
+#     owner: surajincloud
+#     name: homebrew-tools
