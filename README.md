@@ -16,6 +16,13 @@ kubectl krew search eks
 kubectl krew install surajincloud/kubectl-eks
 ```
 
+### Using Brew
+
+```
+brew tap surajincloud/tools
+brew install kubectl-eks
+```
+
 ### Download the binary
 
 * Download the binary from the [release pages](https://github.com/surajincloud/kubectl-eks/releases).
