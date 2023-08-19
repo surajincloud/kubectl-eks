@@ -15,7 +15,7 @@ var versionCmd = &cobra.Command{
 }
 
 func version(cmd *cobra.Command, args []string) error {
-	fmt.Println("v0.3.0")
+	fmt.Println("v0.4.1")
 	return nil
 }
 
