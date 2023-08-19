@@ -37,9 +37,10 @@ mv kubectl-eks ~/.local/bin
 
 ## Install using Brew
 
-TODO
-
-you can contribute to this section, check out [issue #17](https://github.com/surajincloud/kubectl-eks/issues/17).
+```
+brew tap surajincloud/tools
+brew install kubectl-eks
+```
 
 ## Verify Installation
 
