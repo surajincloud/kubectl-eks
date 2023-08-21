@@ -41,8 +41,9 @@ github.com/aws/aws-sdk-go v1.44.76 h1:5e8yGO/XeNYKckOjpBKUd5wStf0So3CrQIiOMCVLpO
 github.com/aws/aws-sdk-go v1.44.76/go.mod h1:y4AeaBuwd2Lk+GepC1E9v0qOiTws0MIWAX4oIKwKHZo=
 github.com/aws/aws-sdk-go-v2 v1.17.1/go.mod h1:JLnGeGONAyi2lWXI1p0PCIOIy333JMVK1U7Hf0aRFLw=
 github.com/aws/aws-sdk-go-v2 v1.17.4/go.mod h1:uzbQtefpm44goOPmdKyAlXSNcwlRgF3ePWVW6EtJvvw=
-github.com/aws/aws-sdk-go-v2 v1.19.0 h1:klAT+y3pGFBU/qVf1uzwttpBbiuozJYWzNLHioyDJ+k=
 github.com/aws/aws-sdk-go-v2 v1.19.0/go.mod h1:uzbQtefpm44goOPmdKyAlXSNcwlRgF3ePWVW6EtJvvw=
+github.com/aws/aws-sdk-go-v2 v1.20.3 h1:lgeKmAZhlj1JqN43bogrM75spIvYnRxqTAh1iupu1yE=
+github.com/aws/aws-sdk-go-v2 v1.20.3/go.mod h1:/RfNgGmRxI+iFOB1OeJUyxiU+9s88k3pfHvDagGEp0M=
 github.com/aws/aws-sdk-go-v2/config v1.17.10/go.mod h1:/4np+UiJJKpWHN7Q+LZvqXYgyjgeXm5+lLfDI6TPZao=
 github.com/aws/aws-sdk-go-v2/config v1.18.13 h1:v0xlYqbO6/EVlM8tUn2QEOA7btQxcgidEq2JRDBPTho=
 github.com/aws/aws-sdk-go-v2/config v1.18.13/go.mod h1:r39wGSZB7wPDW1i54JyQXUpc5KsWjh5z/3S5D9eCqDg=
@@ -87,8 +88,9 @@ github.com/aws/aws-sdk-go-v2/service/sts v1.18.3/go.mod h1:b+psTJn33Q4qGoDaM7ZiO
 github.com/aws/session-manager-plugin v0.0.0-20221012155945-c523002ee02c h1:6cCrrTmS+7B+saEBhMnNblArJpA7BNmjd9F6MUHS6sQ=
 github.com/aws/session-manager-plugin v0.0.0-20221012155945-c523002ee02c/go.mod h1:7n17tunRPUsniNBu5Ja9C7WwJWTdOzaLqr/H0Ns3uuI=
 github.com/aws/smithy-go v1.13.4/go.mod h1:Tg+OJXh4MB2R/uN61Ko2f6hTZwB/ZYGOtib8J3gBHzA=
-github.com/aws/smithy-go v1.13.5 h1:hgz0X/DX0dGqTYpGALqXJoRKRj5oQ7150i5FdTePzO8=
 github.com/aws/smithy-go v1.13.5/go.mod h1:Tg+OJXh4MB2R/uN61Ko2f6hTZwB/ZYGOtib8J3gBHzA=
+github.com/aws/smithy-go v1.14.2 h1:MJU9hqBGbvWZdApzpvoF2WAIJDbtjK2NDJSiJP7HblQ=
+github.com/aws/smithy-go v1.14.2/go.mod h1:Tg+OJXh4MB2R/uN61Ko2f6hTZwB/ZYGOtib8J3gBHzA=
 github.com/census-instrumentation/opencensus-proto v0.2.1/go.mod h1:f6KPmirojxKA12rnyqOA5BBL4O983OfeGPqjHWSTneU=
 github.com/chzyer/logex v1.1.10/go.mod h1:+Ywpsq7O8HXn0nuIou7OrIPyXbp3wmkHB+jjWRnGsAI=
 github.com/chzyer/readline v0.0.0-20180603132655-2972be24d48e/go.mod h1:nSuG5e5PlCu98SY8svDHJxuZscDgtXS6KTTbou5AhLI=
