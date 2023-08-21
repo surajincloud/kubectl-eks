@@ -1,0 +1,11 @@
+apiVersion: krew.googlecontainertools.github.com/v1alpha2
+kind: Plugin
+metadata:
+  name: eks
+spec:
+  version: v{{version}}
+  homepage: https://github.com/surajincloud/kubectl-eks
+  shortDescription: Kubectl plugin for Amazon EKS
+  description: |
+    kubectl-eks plugin provides a set of commands for users which will simplify operations while interacting with Amazon EKS clusters.
+  platforms:
