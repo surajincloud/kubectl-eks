@@ -69,6 +69,22 @@ func nodes(cmd *cobra.Command, args []string) error {
 			amiName = aws.ToString(dis.Images[0].Name)
 		}
 
+		if amiID == "" {
+			instanceId := strings.Split(i.Spec.ProviderID, "/")[len(strings.Split(i.Spec.ProviderID, "/"))-1]
+			out, err := ec2Client.DescribeInstances(ctx, &ec2.DescribeInstancesInput{
+				InstanceIds: []string{instanceId},
+			})
+			if err != nil {
+				log.Fatal(err)
+			}
+			amiID = *out.Reservations[0].Instances[0].ImageId
+			dis, err := ec2Client.DescribeImages(ctx, &ec2.DescribeImagesInput{ImageIds: []string{amiID}})
+			if err != nil {
+				log.Fatal(err)
+			}
+			amiName = aws.ToString(dis.Images[0].Name)
+		}
+
 		// Capacity Type
 		if i.Labels[kube.CapacityTypeLabel] != "" {
 			capacityType = i.Labels[kube.CapacityTypeLabel]
