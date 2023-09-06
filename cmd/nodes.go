@@ -52,8 +52,14 @@ func nodes(cmd *cobra.Command, args []string) error {
 		// AMI
 		if i.Labels[kube.NodeGroupImage] == "" {
 			amiID = i.Labels[kube.KarpenterImage]
-			dis, _ := ec2Client.DescribeImages(ctx, &ec2.DescribeImagesInput{ImageIds: []string{amiID}})
-			amiName = aws.ToString(dis.Images[0].Name)
+			if amiID != "" {
+				dis, err := ec2Client.DescribeImages(ctx, &ec2.DescribeImagesInput{ImageIds: []string{amiID}})
+				if err != nil {
+					log.Fatal(err)
+				}
+				amiName = aws.ToString(dis.Images[0].Name)
+			}
+
 		} else {
 			amiID = i.Labels[kube.NodeGroupImage]
 			dis, err := ec2Client.DescribeImages(ctx, &ec2.DescribeImagesInput{ImageIds: []string{amiID}})
