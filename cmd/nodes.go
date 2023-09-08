@@ -66,7 +66,8 @@ func nodes(cmd *cobra.Command, args []string) error {
 			if err != nil {
 				log.Fatal(err)
 			}
-			amiName = aws.ToString(dis.Images[0].Name)
+			ami := aws.ToString(dis.Images[0].Name)
+			amiName = strings.Split(ami, "/")[len(strings.Split(ami, "/"))-1]
 		}
 
 		if amiID == "" {
