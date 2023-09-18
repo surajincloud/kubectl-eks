@@ -6,7 +6,7 @@ require (
 	github.com/antchfx/jsonquery v1.3.2
 	github.com/aws/aws-sdk-go-v2 v1.21.0
 	github.com/aws/aws-sdk-go-v2/config v1.18.13
-	github.com/aws/aws-sdk-go-v2/service/cloudwatchlogs v1.22.1
+	github.com/aws/aws-sdk-go-v2/service/cloudwatchlogs v1.23.5
 	github.com/aws/aws-sdk-go-v2/service/ec2 v1.64.0
 	github.com/aws/aws-sdk-go-v2/service/eks v1.29.5
 	github.com/aws/aws-sdk-go-v2/service/ssm v1.37.5
