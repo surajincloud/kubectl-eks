@@ -3,7 +3,7 @@ module github.com/surajincloud/kubectl-eks
 go 1.20
 
 require (
-	github.com/antchfx/jsonquery v1.3.2
+	github.com/antchfx/jsonquery v1.3.3
 	github.com/aws/aws-sdk-go-v2 v1.21.0
 	github.com/aws/aws-sdk-go-v2/config v1.18.13
 	github.com/aws/aws-sdk-go-v2/service/cloudwatchlogs v1.23.5
@@ -77,7 +77,7 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/stretchr/objx v0.5.0 // indirect
-	github.com/stretchr/testify v1.8.2 // indirect
+	github.com/stretchr/testify v1.8.4 // indirect
 	github.com/tetratelabs/wazero v1.3.1 // indirect
 	github.com/twinj/uuid v0.0.0-20151029044442-89173bcdda19 // indirect
 	github.com/wasilibs/go-re2 v1.3.0 // indirect
