@@ -15,7 +15,7 @@ require (
 	github.com/siderolabs/go-kubeconfig v0.1.0
 	github.com/spf13/cobra v1.7.0
 	k8s.io/api v0.28.1
-	k8s.io/apimachinery v0.28.1
+	k8s.io/apimachinery v0.28.2
 	k8s.io/cli-runtime v0.28.1
 	k8s.io/client-go v0.28.1
 )
