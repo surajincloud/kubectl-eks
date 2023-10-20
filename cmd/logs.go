@@ -56,6 +56,11 @@ func logs(cmd *cobra.Command, args []string) error {
 
 	// we only look at the first argument to determine if it is a control plane log source or node
 	logTarget := args[0]
+	if logTarget == "all" {
+		args = args[1:]
+		args = append(args, "scheduler", "kube-apiserver-audit", "kube-controller-manager", "kube-apiserver", "authenticator", "cloud-controller-manager")
+	}
+
 	logsChan := make(chan string)
 	logsDoneChan := make(chan bool, len(args))
 
@@ -88,11 +93,6 @@ func logs(cmd *cobra.Command, args []string) error {
 
 	// check first argument if it is a control plane log source or node
 	if contains(cloudwatchLogStreams, logTarget) || (logTarget == "all") {
-
-		if logTarget == "all" {
-			args = args[1:]
-			args = append(args, "scheduler", "kube-apiserver-audit", "kube-controller-manager", "kube-apiserver", "authenticator", "cloud-controller-manager")
-		}
 
 		var cwlStreamInput cloudwatchlogs.DescribeLogStreamsInput
 		var streams *cloudwatchlogs.DescribeLogStreamsOutput
