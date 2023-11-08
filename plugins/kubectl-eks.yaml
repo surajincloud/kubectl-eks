@@ -3,7 +3,7 @@ kind: Plugin
 metadata:
   name: eks
 spec:
-  version: v0.4.3
+  version: v0.4.4
   homepage: https://github.com/surajincloud/kubectl-eks
   shortDescription: Kubectl plugin for Amazon EKS
   description: |
@@ -11,57 +11,57 @@ spec:
   platforms:
   - selector:
       matchLabels:
-        os: linux
+        os: darwin
         arch: amd64
-    uri: https://github.com/surajincloud/kubectl-eks/releases/download/v0.4.3/kubectl-eks_0.4.3_linux_amd64.tar.gz
-    sha256: 18ab9e791186eacc14619556ff6d8ad85e9b5501aec9454af4a2940a1804253c
-    bin: kubectl-eks
-  - selector:
-      matchLabels:
-        os: linux
-        arch: 386
-    uri: https://github.com/surajincloud/kubectl-eks/releases/download/v0.4.3/kubectl-eks_0.4.3_linux_386.tar.gz
-    sha256: 4ceaa528682321b4596b7b61c873b0816fa9ec1543a702fcac81219276a040c0
+    uri: https://github.com/surajincloud/kubectl-eks/releases/download/v0.4.4/kubectl-eks_0.4.4_darwin_amd64.tar.gz
+    sha256: 1d695e82fc5fd0a5dd883e5ee461cc1a8188c094640523adb9c88d505e82e362
     bin: kubectl-eks
   - selector:
       matchLabels:
         os: darwin
         arch: arm64
-    uri: https://github.com/surajincloud/kubectl-eks/releases/download/v0.4.3/kubectl-eks_0.4.3_darwin_arm64.tar.gz
-    sha256: 6a20e06ef9269f293545edcb46c76f36b0e640f8681777878d3526836b748009
+    uri: https://github.com/surajincloud/kubectl-eks/releases/download/v0.4.4/kubectl-eks_0.4.4_darwin_arm64.tar.gz
+    sha256: 2c9b222b8847782da915fce524c542dd22db648246168808203d178e83a5c450
     bin: kubectl-eks
   - selector:
       matchLabels:
-        os: darwin
+        os: linux
+        arch: 386
+    uri: https://github.com/surajincloud/kubectl-eks/releases/download/v0.4.4/kubectl-eks_0.4.4_linux_386.tar.gz
+    sha256: ba9849bb6e0307a872ed03c0150f0f1edd44ce5a4428121b14ec1f372fe0136b
+    bin: kubectl-eks
+  - selector:
+      matchLabels:
+        os: linux
         arch: amd64
-    uri: https://github.com/surajincloud/kubectl-eks/releases/download/v0.4.3/kubectl-eks_0.4.3_darwin_amd64.tar.gz
-    sha256: 6c72cdbbd1e6b4e0b3d609ec6dfa884f24059c78be4529aa9d9de90a5db87836
+    uri: https://github.com/surajincloud/kubectl-eks/releases/download/v0.4.4/kubectl-eks_0.4.4_linux_amd64.tar.gz
+    sha256: eb5811e3ce013136cb3fea3eec010ce65e0f716d3327045c3561f155a95187c8
     bin: kubectl-eks
   - selector:
       matchLabels:
         os: linux
         arch: arm64
-    uri: https://github.com/surajincloud/kubectl-eks/releases/download/v0.4.3/kubectl-eks_0.4.3_linux_arm64.tar.gz
-    sha256: 749c3783a7caaa2cc61a0040299cec7c965bbbb4fc22bc094f30e87953ca0f92
-    bin: kubectl-eks
-  - selector:
-      matchLabels:
-        os: windows
-        arch: arm64
-    uri: https://github.com/surajincloud/kubectl-eks/releases/download/v0.4.3/kubectl-eks_0.4.3_windows_arm64.tar.gz
-    sha256: 7a829c9ac0cdb93b750d3d723f8bd786fd8d7fb4895954584b8a05a7e702a1dc
-    bin: kubectl-eks
-  - selector:
-      matchLabels:
-        os: windows
-        arch: amd64
-    uri: https://github.com/surajincloud/kubectl-eks/releases/download/v0.4.3/kubectl-eks_0.4.3_windows_amd64.tar.gz
-    sha256: c6e8e860628f2ec81f7dcfc3692844fd7c639bc1a397590d229302d101172739
+    uri: https://github.com/surajincloud/kubectl-eks/releases/download/v0.4.4/kubectl-eks_0.4.4_linux_arm64.tar.gz
+    sha256: 02edf2344605085d5ac4fb1db8636aa77c73866234a1e1337eecfdc806b2800a
     bin: kubectl-eks
   - selector:
       matchLabels:
         os: windows
         arch: 386
-    uri: https://github.com/surajincloud/kubectl-eks/releases/download/v0.4.3/kubectl-eks_0.4.3_windows_386.tar.gz
-    sha256: cffda1be2e0cad77b27eddbba4308849bb56eb6061f173bc026393b5fe1abefc
+    uri: https://github.com/surajincloud/kubectl-eks/releases/download/v0.4.4/kubectl-eks_0.4.4_windows_386.tar.gz
+    sha256: db554757db3c740305b058029176ebcabb0f521dc34115a3e37775d92509334a
+    bin: kubectl-eks
+  - selector:
+      matchLabels:
+        os: windows
+        arch: amd64
+    uri: https://github.com/surajincloud/kubectl-eks/releases/download/v0.4.4/kubectl-eks_0.4.4_windows_amd64.tar.gz
+    sha256: 4e25d4d24ab65f8d2d58b580c6c4fa93b5853e1bd23ff929ae6982e4b32cb205
+    bin: kubectl-eks
+  - selector:
+      matchLabels:
+        os: windows
+        arch: arm64
+    uri: https://github.com/surajincloud/kubectl-eks/releases/download/v0.4.4/kubectl-eks_0.4.4_windows_arm64.tar.gz
+    sha256: 3912bf1177b652c4e9c969a987bd89958c0a7d0c05069c447dec785806d9d1ce
     bin: kubectl-eks
