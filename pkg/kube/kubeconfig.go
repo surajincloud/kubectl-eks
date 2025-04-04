@@ -23,24 +23,15 @@ func getClusterFromKubeconfig() (string, error) {
 }
 
 func ReadKubeconfig() (api.Config, error) {
-	// Check if KUBECONFIG environment variable is set
-	kubeconfigPath := os.Getenv("KUBECONFIG")
+	loadingRules := clientcmd.NewDefaultClientConfigLoadingRules()
+	configOverrides := &clientcmd.ConfigOverrides{}
 
-	// If KUBECONFIG is not set, use the default path
-	if kubeconfigPath == "" {
-		usr, err := user.Current()
-		if err != nil {
-			fmt.Printf("Failed to get user information: %v\n", err)
-			return api.Config{}, err
-		}
-		kubeconfigPath = filepath.Join(usr.HomeDir, ".kube", "config")
-	}
+	clientConfig := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(loadingRules, configOverrides)
 
-	// Loading the kubeconfig file
-	config, err := clientcmd.LoadFromFile(kubeconfigPath)
+	rawConfig, err := clientConfig.RawConfig()
 	if err != nil {
-		fmt.Printf("Failed to load kubeconfig: %v\n", err)
 		return api.Config{}, err
 	}
-	return *config, nil
+	return rawConfig, nil
 }
+
