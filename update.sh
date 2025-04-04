@@ -2,7 +2,7 @@
 
 version="$1"
 
-url="https://github.com/surajincloud/kubectl-eks/releases/download/v${version}/kubectl-eks_${version}_checksums.txt"
+url="https://github.com/surajincloud/kubectl-eks/releases/download/v${version}/checksums.txt"
 
 echo "downloaded file"
 echo $url
