@@ -1,11 +1,6 @@
 package kube
 
 import (
-	"fmt"
-	"os"
-	"os/user"
-	"path/filepath"
-
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/clientcmd/api"
 )
