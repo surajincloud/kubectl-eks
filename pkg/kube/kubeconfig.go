@@ -34,4 +34,3 @@ func ReadKubeconfig() (api.Config, error) {
 	}
 	return rawConfig, nil
 }
-
